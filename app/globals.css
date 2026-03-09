@@ -1,26 +1,416 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================
+   DESIGN TOKENS — DARK MODE (JARVIS)
+   ============================================ */
+:root,
+[data-theme="dark"] {
+  --bg-base: #080c14;
+  --bg-gradient-from: #080c14;
+  --bg-gradient-to: #0d1120;
+  --bg-pattern: rgba(0, 212, 255, 0.03);
+
+  --glass-surface: rgba(255, 255, 255, 0.04);
+  --glass-surface-hover: rgba(255, 255, 255, 0.07);
+  --glass-surface-active: rgba(0, 212, 255, 0.08);
+  --glass-border: rgba(0, 212, 255, 0.18);
+  --glass-border-hover: rgba(0, 212, 255, 0.45);
+  --glass-blur: blur(20px) saturate(180%);
+
+  --accent-primary: #00d4ff;
+  --accent-secondary: #a855f7;
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --accent-pink: #ec4899;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: rgba(226, 232, 240, 0.65);
+  --text-muted: rgba(226, 232, 240, 0.35);
+
+  --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.35), 0 0 40px rgba(0, 212, 255, 0.12);
+  --glow-violet: 0 0 20px rgba(168, 85, 247, 0.35), 0 0 40px rgba(168, 85, 247, 0.12);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.35), 0 0 40px rgba(16, 185, 129, 0.12);
+  --glow-amber: 0 0 20px rgba(245, 158, 11, 0.35), 0 0 40px rgba(245, 158, 11, 0.12);
+  --glow-red: 0 0 20px rgba(239, 68, 68, 0.45), 0 0 40px rgba(239, 68, 68, 0.15);
+
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --card-shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  --toolbar-bg: rgba(8, 12, 20, 0.85);
+  --dock-bg: rgba(8, 12, 20, 0.9);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================
+   DESIGN TOKENS — LIGHT MODE (CRYSTAL)
+   ============================================ */
+[data-theme="light"] {
+  --bg-base: #f0f2f7;
+  --bg-gradient-from: #ffffff;
+  --bg-gradient-to: #e8ecf3;
+  --bg-pattern: rgba(99, 102, 241, 0.04);
+
+  --glass-surface: rgba(255, 255, 255, 0.7);
+  --glass-surface-hover: rgba(255, 255, 255, 0.85);
+  --glass-surface-active: rgba(99, 102, 241, 0.08);
+  --glass-border: rgba(99, 102, 241, 0.15);
+  --glass-border-hover: rgba(99, 102, 241, 0.4);
+  --glass-blur: blur(24px) saturate(200%);
+
+  --accent-primary: #6366f1;
+  --accent-secondary: #8b5cf6;
+  --accent-success: #059669;
+  --accent-warning: #d97706;
+  --accent-danger: #dc2626;
+  --accent-pink: #db2777;
+
+  --text-primary: #1e293b;
+  --text-secondary: rgba(30, 41, 59, 0.65);
+  --text-muted: rgba(30, 41, 59, 0.38);
+
+  --glow-cyan: 0 0 20px rgba(99, 102, 241, 0.2), 0 4px 20px rgba(99, 102, 241, 0.1);
+  --glow-violet: 0 0 20px rgba(139, 92, 246, 0.2), 0 4px 20px rgba(139, 92, 246, 0.1);
+  --glow-green: 0 0 16px rgba(5, 150, 105, 0.18);
+  --glow-amber: 0 0 16px rgba(217, 119, 6, 0.18);
+  --glow-red: 0 0 16px rgba(220, 38, 38, 0.2);
+
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
+  --card-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  --toolbar-bg: rgba(255, 255, 255, 0.9);
+  --dock-bg: rgba(255, 255, 255, 0.92);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================
+   BASE RESET & TYPOGRAPHY
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* ============================================
+   GLASS CARD BASE
+   ============================================ */
+.glass {
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass:hover {
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--card-shadow), var(--glow-cyan);
+  transform: translateY(-1px);
+}
+
+.glass-elevated {
+  background: var(--glass-surface-active);
+  border-color: var(--accent-primary);
+  box-shadow: var(--card-shadow-elevated), var(--glow-cyan);
+}
+
+/* ============================================
+   CANVAS BACKGROUND — DOT MATRIX
+   ============================================ */
+.canvas-bg {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(0, 212, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.04) 0%, transparent 50%);
+}
+
+[data-theme="light"] .canvas-bg {
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+}
+
+/* ============================================
+   REACT FLOW OVERRIDES
+   ============================================ */
+.react-flow__background {
+  background: transparent !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--accent-primary) !important;
+  stroke-opacity: 0.3 !important;
+  stroke-width: 1.5 !important;
+}
+
+.react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--accent-primary) !important;
+  border: 2px solid var(--bg-base) !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+
+.react-flow__minimap {
+  background: var(--toolbar-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 12px !important;
+  backdrop-filter: var(--glass-blur) !important;
+}
+
+.react-flow__controls {
+  background: var(--toolbar-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 12px !important;
+  backdrop-filter: var(--glass-blur) !important;
+  overflow: hidden;
+  box-shadow: var(--card-shadow) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+  width: 36px !important;
+  height: 36px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--glass-surface-hover) !important;
+  color: var(--accent-primary) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+/* ============================================
+   PRIORITY COLORS
+   ============================================ */
+.priority-low {
+  --priority-color: var(--accent-success);
+}
+
+.priority-medium {
+  --priority-color: var(--accent-warning);
+}
+
+.priority-high {
+  --priority-color: var(--accent-primary);
+}
+
+.priority-critical {
+  --priority-color: var(--accent-danger);
+}
+
+/* ============================================
+   STATUS ANIMATIONS
+   ============================================ */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: var(--card-shadow), 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    box-shadow: var(--card-shadow), 0 0 20px rgba(239, 68, 68, 0.7), 0 0 40px rgba(239, 68, 68, 0.3);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    background-position: 0 -100vh;
+  }
+
+  100% {
+    background-position: 0 100vh;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes typing-cursor {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes voice-waveform {
+
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes materialise {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+    filter: blur(8px);
+  }
+
+  60% {
+    opacity: 1;
+    filter: blur(2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-materialise {
+  animation: materialise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-typing-cursor {
+  animation: typing-cursor 1s ease infinite;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* ============================================
+   SELECTION
+   ============================================ */
+::selection {
+  background: rgba(0, 212, 255, 0.25);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] ::selection {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+/* ============================================
+   CUSTOM CHECKBOX
+   ============================================ */
+.glass-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--glass-border-hover);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  background: var(--glass-surface);
+}
+
+.glass-checkbox:checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.glass-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid #000;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ============================================
+   FONT
+   ============================================ */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
 }
