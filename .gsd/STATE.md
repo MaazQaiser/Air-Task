@@ -1,14 +1,12 @@
 # Complete Roadmap and Tasks execution
 
-## Current Status: Phase 1 Completed / Waiting to begin Phase 2.
+## Current Status: Phase 2 Completed / Waiting to begin Phase 3.
 
-### Phase 1 Summary:
-- Implemented Google & Email/Password login flows (`LoginPage.tsx`, `authStore.ts`).
-- Integrated Firebase connection (`firebase.ts`).
-- Created default Admin logic inside `authStore.ts`.
-- Wired Toolbar to reflect user status and hook into Firebase logout logic.
-- Routed the app with an `AuthProvider.tsx` wrapper preventing access to unauthorized features.
+### Phase 2 Summary:
+- Fully integrated Firestore CRUD operations via `lib/firestoreService.ts`.
+- Rewrote `taskStore.ts` to rely on the backend database rather than local application state.
+- Developed `FirestoreSync.tsx` that binds onto the active user's canvas and pulls in realtime UI updates.
+- Attached an automated migration script on user-login to sync legacy `localStorage` notes directly into Firestore under the `Migrated Workspace`.
 
 ### Next Step / Blocks
-- The app has dummy keys in `firebase.ts` relying on `process.env`.
-- We need the user to create a Firebase Project and feed the config before moving to **Phase 2: Firestore Data Layer**.
+- Now checking if the user wants to review the workspace before embarking on **Phase 3: Multi-Canvas Organization**.

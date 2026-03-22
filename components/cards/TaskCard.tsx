@@ -1,23 +1,23 @@
 "use client";
 import { memo, useState } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
-import { motion } from "framer-motion";
-import { Pin, Trash2, EyeOff, CheckCircle, Circle, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Pin, Trash2, EyeOff, CheckCircle2, Circle, Calendar, Zap, Clock, AlertTriangle } from "lucide-react";
 import { Task } from "@/types/task";
 import { useTaskStore } from "@/stores/taskStore";
 import { cn, formatDueDate, isOverdue } from "@/lib/utils";
 
 const PRIORITY_CONFIG = {
-    low: { label: "Low", color: "#10b981" },
-    medium: { label: "Medium", color: "#f59e0b" },
-    high: { label: "High", color: "#00d4ff" },
-    critical: { label: "Critical", color: "#ef4444" },
+    low:      { label: "Low",      color: "#10b981", icon: <Circle size={9} />, glow: "rgba(16,185,129,0.3)" },
+    medium:   { label: "Medium",   color: "#f59e0b", icon: <Zap size={9} />, glow: "rgba(245,158,11,0.3)" },
+    high:     { label: "High",     color: "#00d4ff", icon: <Zap size={9} />, glow: "rgba(0,212,255,0.3)" },
+    critical: { label: "Critical", color: "#ef4444", icon: <AlertTriangle size={9} />, glow: "rgba(239,68,68,0.35)" },
 };
 
 const STATUS_CONFIG = {
-    todo: { label: "To Do", bg: "rgba(226,232,240,0.1)", text: "var(--text-secondary)" },
-    inprogress: { label: "In Progress", bg: "rgba(0,212,255,0.12)", text: "#00d4ff" },
-    done: { label: "Done", bg: "rgba(16,185,129,0.12)", text: "#10b981" },
+    todo:       { label: "To Do",       bg: "rgba(226,232,240,0.08)", text: "rgba(226,232,240,0.45)", border: "rgba(226,232,240,0.12)" },
+    inprogress: { label: "In Progress", bg: "rgba(0,212,255,0.1)",    text: "#00d4ff",                border: "rgba(0,212,255,0.2)" },
+    done:       { label: "Done",        bg: "rgba(16,185,129,0.1)",   text: "#10b981",                border: "rgba(16,185,129,0.2)" },
 };
 
 function TaskCard({ data, selected }: NodeProps<Task>) {
@@ -41,124 +41,169 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.85, filter: "blur(8px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            initial={{ opacity: 0, scale: 0.88, y: 12, filter: "blur(8px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ type: "spring", damping: 22, stiffness: 320 }}
             className={cn(
-                "glass overflow-hidden group cursor-default",
+                "glass overflow-hidden group cursor-default relative",
                 selected && "glass-elevated",
                 overdue && "animate-pulse-glow",
-                data.status === "done" && "opacity-60"
+                data.status === "done" && "opacity-55"
             )}
             style={{
-                width: 360,
+                width: 320,
                 borderColor: selected ? priority.color : undefined,
-                boxShadow: selected ? `var(--card-shadow-elevated), 0 0 24px ${priority.color}40` : undefined,
+                boxShadow: selected
+                    ? `var(--card-shadow-elevated), 0 0 28px ${priority.glow}`
+                    : undefined,
             }}
         >
-            <Handle type="target" position={Position.Top} />
-            <Handle type="source" position={Position.Bottom} />
+            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
 
-            {/* Priority stripe */}
-            <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${priority.color}, transparent)` }} />
+            {/* Priority accent stripe */}
+            <div
+                className="h-[2px] w-full"
+                style={{ background: `linear-gradient(90deg, ${priority.color}cc, ${priority.color}00)` }}
+            />
 
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3" style={{ padding: "32px 32px 16px 32px" }}>
-                <div className="flex-1 min-w-0">
-                    {editing ? (
-                        <input
-                            autoFocus
-                            className="w-full bg-transparent outline-none text-[15px] font-semibold border-b border-[var(--accent-primary)] pb-0.5"
-                            style={{ color: "var(--text-primary)" }}
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onBlur={handleTitleBlur}
-                            onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
-                        />
-                    ) : (
-                        <h3
-                            className={cn(
-                                "text-[15px] font-semibold leading-tight cursor-text",
-                                data.status === "done" && "line-through opacity-60"
-                            )}
-                            style={{ color: "var(--text-primary)" }}
-                            onDoubleClick={() => setEditing(true)}
-                        >
-                            {data.title}
-                        </h3>
-                    )}
-                    {data.description && (
-                        <p className="text-[12px] mt-2 leading-relaxed line-clamp-2" style={{ color: "var(--text-muted)" }}>
-                            {data.description}
-                        </p>
-                    )}
-                </div>
-
-                {/* Actions */}
-                <div className={cn(
-                    "flex flex-col gap-1.5 transition-opacity duration-200 flex-shrink-0",
-                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                )}>
+            {/* Main content */}
+            <div className="p-4">
+                {/* Top row: title + actions */}
+                <div className="flex items-start gap-2">
+                    {/* Status toggle circle */}
                     <button
-                        onClick={() => togglePin(data.id)}
-                        className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                        style={{ color: data.pinned ? priority.color : "var(--text-muted)" }}
-                        title={data.pinned ? "Unpin" : "Pin"}
+                        onClick={cycleStatus}
+                        className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+                        style={{
+                            borderColor: data.status === "done" ? "#10b981" : "rgba(226,232,240,0.2)",
+                            background: data.status === "done" ? "rgba(16,185,129,0.15)" : "transparent",
+                            color: data.status === "done" ? "#10b981" : "rgba(226,232,240,0.3)",
+                        }}
+                        title="Cycle status"
                     >
-                        <Pin size={13} fill={data.pinned ? "currentColor" : "none"} />
+                        {data.status === "done" ? <CheckCircle2 size={12} /> : <Circle size={12} />}
                     </button>
-                    <button
-                        onClick={() => toggleDock(data.id)}
-                        className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
-                        style={{ color: "var(--text-muted)" }}
-                        title="Send to dock"
-                    >
-                        <EyeOff size={13} />
-                    </button>
-                    <button
-                        onClick={() => deleteTask(data.id)}
-                        className="p-1.5 rounded-md hover:bg-red-500/20 transition-colors text-red-400"
-                        title="Delete"
-                    >
-                        <Trash2 size={13} />
-                    </button>
-                </div>
-            </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between gap-2" style={{ padding: "8px 32px 32px 32px" }}>
-                <button
-                    onClick={cycleStatus}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-all hover:scale-105"
-                    style={{ background: status.bg, color: status.text }}
-                >
-                    {data.status === "done" ? <CheckCircle size={11} /> : <Circle size={11} />}
-                    {status.label}
-                </button>
+                    {/* Title */}
+                    <div className="flex-1 min-w-0">
+                        {editing ? (
+                            <input
+                                autoFocus
+                                className="w-full bg-transparent outline-none text-[13px] font-semibold leading-snug border-b pb-0.5"
+                                style={{
+                                    color: "var(--text-primary)",
+                                    borderColor: priority.color,
+                                }}
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                onBlur={handleTitleBlur}
+                                onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
+                            />
+                        ) : (
+                            <h3
+                                className={cn(
+                                    "text-[13px] font-semibold leading-snug cursor-text select-none",
+                                    data.status === "done" && "line-through opacity-50"
+                                )}
+                                style={{ color: "var(--text-primary)" }}
+                                onDoubleClick={() => setEditing(true)}
+                            >
+                                {data.title}
+                            </h3>
+                        )}
 
-                {data.dueDate && (
-                    <div
-                        className="flex items-center gap-1 text-[11px] font-mono"
-                        style={{ color: overdue ? "var(--accent-danger)" : "var(--text-muted)" }}
-                    >
-                        <Calendar size={10} />
-                        {formatDueDate(data.dueDate)}
+                        {data.description && (
+                            <p
+                                className="text-[11px] mt-1.5 leading-relaxed line-clamp-2"
+                                style={{ color: "var(--text-muted)" }}
+                            >
+                                {data.description}
+                            </p>
+                        )}
                     </div>
-                )}
 
-                <div
-                    className="w-2 h-2 rounded-full flex-shrink-0 ml-auto"
-                    style={{ background: priority.color, boxShadow: `0 0 6px ${priority.color}` }}
-                    title={priority.label}
-                />
+                    {/* Quick actions */}
+                    <div className={cn(
+                        "flex flex-col gap-1 flex-shrink-0 transition-all duration-200",
+                        selected ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
+                    )}>
+                        <button
+                            onClick={() => togglePin(data.id)}
+                            className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+                            style={{ color: data.pinned ? priority.color : "var(--text-muted)" }}
+                            title={data.pinned ? "Unpin" : "Pin"}
+                        >
+                            <Pin size={11} fill={data.pinned ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                            onClick={() => toggleDock(data.id)}
+                            className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+                            style={{ color: "var(--text-muted)" }}
+                            title="Send to dock"
+                        >
+                            <EyeOff size={11} />
+                        </button>
+                        <button
+                            onClick={() => deleteTask(data.id)}
+                            className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-red-500/15 transition-colors"
+                            style={{ color: "rgba(239,68,68,0.6)" }}
+                            title="Delete"
+                        >
+                            <Trash2 size={11} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Footer row */}
+                <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    {/* Status badge */}
+                    <div
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        style={{
+                            background: status.bg,
+                            color: status.text,
+                            border: `1px solid ${status.border}`,
+                        }}
+                    >
+                        {data.status === "inprogress" && <Clock size={8} />}
+                        {data.status === "done" && <CheckCircle2 size={8} />}
+                        {status.label}
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-auto">
+                        {data.dueDate && (
+                            <div
+                                className="flex items-center gap-1 text-[10px] font-mono"
+                                style={{ color: overdue ? "#ef4444" : "var(--text-muted)" }}
+                            >
+                                <Calendar size={9} />
+                                {formatDueDate(data.dueDate)}
+                            </div>
+                        )}
+
+                        {/* Priority dot */}
+                        <div
+                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            style={{ background: priority.color, boxShadow: `0 0 5px ${priority.color}` }}
+                            title={priority.label}
+                        />
+                    </div>
+                </div>
             </div>
 
-            {data.pinned && (
-                <div
-                    className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
-                    style={{ background: priority.color, boxShadow: `0 0 6px ${priority.color}` }}
-                />
-            )}
+            {/* Pinned indicator */}
+            <AnimatePresence>
+                {data.pinned && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute top-2.5 left-3 w-1 h-1 rounded-full"
+                        style={{ background: priority.color, boxShadow: `0 0 6px ${priority.color}` }}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
