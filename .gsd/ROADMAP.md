@@ -10,7 +10,7 @@
 - Add logic for default system admin user upon creation
 
 ## Phase 2: Firestore Data Layer & Migration
-**Status**: PENDING
+**Status**: COMPLETE
 
 **Tasks**:
 - Implement CRUD operations for canvases and cards in Firestore
