@@ -87,7 +87,7 @@ export default function LoginPage() {
             >
                 {/* Glass card */}
                 <div
-                    className="relative overflow-hidden rounded-3xl p-8"
+                    className="relative overflow-hidden rounded-3xl px-8 pb-8 pt-10"
                     style={{
                         background: "rgba(255,255,255,0.04)",
                         backdropFilter: "blur(32px) saturate(180%)",
