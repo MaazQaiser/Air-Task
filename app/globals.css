@@ -414,3 +414,839 @@ body {
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
+
+/* ─── 1. COLOR TOKENS (CSS Custom Properties) ─────────────────── */
+
+:root {
+  /* ── Core Brand ── */
+  --si-blue:            #135DFF;
+  --si-orange:          #F4780B;
+  --si-ai-purple:       #7C5CFC;
+  
+  /* ── Semantic ── */
+  --si-red:             #DC2626;
+  --si-green:           #16a34a;
+  --si-amber:           #F4780B;
+  
+  /* ── Monochrome ── */
+  --si-foreground:      #0f172a;
+  --si-muted:           #64748b;
+  --si-background:      #eef1f6;
+  --si-white:           #ffffff;
+
+  /* ── Blue Hue Scale (opacity variants) ── */
+  --si-blue-3:          rgba(19, 93, 255, 0.03);
+  --si-blue-5:          rgba(19, 93, 255, 0.05);
+  --si-blue-6:          rgba(19, 93, 255, 0.06);
+  --si-blue-8:          rgba(19, 93, 255, 0.08);
+  --si-blue-10:         rgba(19, 93, 255, 0.10);
+  --si-blue-15:         rgba(19, 93, 255, 0.15);
+  --si-blue-20:         rgba(19, 93, 255, 0.20);
+  --si-blue-33:         rgba(19, 93, 255, 0.33);
+  --si-blue-55:         rgba(19, 93, 255, 0.55);
+  --si-blue-67:         rgba(19, 93, 255, 0.67);
+  --si-blue-80:         rgba(19, 93, 255, 0.80);
+  --si-blue-aa:         rgba(19, 93, 255, 0.67);
+  --si-blue-cc:         rgba(19, 93, 255, 0.80);
+
+  /* ── Orange / Amber Hue Scale ── */
+  --si-amber-8:         rgba(244, 120, 11, 0.08);
+  --si-amber-10:        rgba(244, 120, 11, 0.10);
+  --si-amber-15:        rgba(244, 120, 11, 0.15);
+  --si-amber-20:        rgba(244, 120, 11, 0.20);
+  --si-amber-66:        rgba(244, 120, 11, 0.66);
+  --si-amber-cc:        rgba(244, 120, 11, 0.80);
+
+  /* ── Red Hue Scale ── */
+  --si-red-8:           rgba(220, 38, 38, 0.08);
+  --si-red-10:          rgba(220, 38, 38, 0.10);
+  --si-red-15:          rgba(220, 38, 38, 0.15);
+  --si-red-20:          rgba(220, 38, 38, 0.20);
+  --si-red-bb:          rgba(220, 38, 38, 0.73);
+
+  /* ── Green Hue Scale ── */
+  --si-green-8:         rgba(22, 163, 74, 0.08);
+  --si-green-10:        rgba(22, 163, 74, 0.10);
+  --si-green-15:        rgba(22, 163, 74, 0.15);
+  --si-green-20:        rgba(22, 163, 74, 0.20);
+
+  /* ── Purple / AI Hue Scale ── */
+  --si-purple-8:        rgba(124, 92, 252, 0.08);
+  --si-purple-10:       rgba(124, 92, 252, 0.10);
+  --si-purple-15:       rgba(124, 92, 252, 0.15);
+  --si-purple-55:       rgba(124, 92, 252, 0.55);
+
+  /* ── Foreground Opacity Scale ── */
+  --si-fg-4:            rgba(15, 23, 42, 0.04);
+  --si-fg-6:            rgba(15, 23, 42, 0.06);
+  --si-fg-10:           rgba(15, 23, 42, 0.10);
+  --si-fg-25:           rgba(15, 23, 42, 0.25);
+  --si-fg-40:           rgba(15, 23, 42, 0.40);
+  --si-fg-50:           rgba(15, 23, 42, 0.50);
+  --si-fg-65:           rgba(15, 23, 42, 0.65);
+  --si-fg-75:           rgba(15, 23, 42, 0.75);
+
+  /* ── White Opacity Scale ── */
+  --si-white-30:        rgba(255, 255, 255, 0.30);
+  --si-white-40:        rgba(255, 255, 255, 0.40);
+  --si-white-45:        rgba(255, 255, 255, 0.45);
+  --si-white-50:        rgba(255, 255, 255, 0.50);
+  --si-white-55:        rgba(255, 255, 255, 0.55);
+  --si-white-60:        rgba(255, 255, 255, 0.60);
+  --si-white-70:        rgba(255, 255, 255, 0.70);
+  --si-white-80:        rgba(255, 255, 255, 0.80);
+  --si-white-95:        rgba(255, 255, 255, 0.95);
+
+  /* ── Shadows ── */
+  --si-shadow-card:     0 2px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5);
+  --si-shadow-hover:    0 4px 24px rgba(0,0,0,0.06);
+  --si-shadow-subtle:   0 1px 6px rgba(0,0,0,0.03);
+  --si-shadow-tooltip:  0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+  --si-shadow-modal:    0 20px 60px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06);
+  --si-shadow-glow:     0 0 20px rgba(19, 93, 255, 0.15);
+
+  /* ── Radii ── */
+  --si-radius-sm:       8px;
+  --si-radius-md:       12px;
+  --si-radius-lg:       16px;
+  --si-radius-xl:       22px;
+  --si-radius-full:     9999px;
+
+  /* ── Blur ── */
+  --si-blur-md:         12px;
+  --si-blur-lg:         20px;
+  --si-blur-xl:         40px;
+  --si-blur-2xl:        64px;
+
+  /* ── Transitions ── */
+  --si-transition-fast: 150ms ease;
+  --si-transition:      300ms ease;
+  --si-transition-slow: 500ms ease;
+}
+
+
+/* ─── 2. GLASSMORPHISM CARDS ──────────────────────────────────── */
+
+/* Primary widget card — the core glass card used for all 13 widgets */
+.si-card {
+  background: var(--si-white-40);
+  backdrop-filter: blur(var(--si-blur-2xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-2xl));
+  border: 1px solid var(--si-white-50);
+  border-radius: var(--si-radius-xl);
+  box-shadow: var(--si-shadow-card);
+  transition: all var(--si-transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.si-card:hover,
+.si-card--hover:hover {
+  background: var(--si-white-55);
+  box-shadow: var(--si-shadow-hover);
+  cursor: pointer;
+}
+
+/* Specular highlight — top edge light refraction */
+.si-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-radius: var(--si-radius-xl) var(--si-radius-xl) 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent 5%,
+    var(--si-white-95) 20%,
+    var(--si-white) 50%,
+    var(--si-white-95) 80%,
+    transparent 95%
+  );
+  pointer-events: none;
+}
+
+/* Lighter glass variant — for nested inner cards */
+.si-card--inner {
+  background: var(--si-white-40);
+  backdrop-filter: blur(var(--si-blur-xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-xl));
+  border: 1px solid var(--si-white-50);
+  border-radius: var(--si-radius-md);
+}
+
+/* Chat bubble glass — AI message bubbles */
+.si-card--chat {
+  background: var(--si-white-60);
+  backdrop-filter: blur(var(--si-blur-xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-xl));
+  border: 1px solid var(--si-white-50);
+  border-radius: 16px;
+  border-bottom-left-radius: 8px;
+  box-shadow: var(--si-shadow-subtle);
+}
+
+/* Tooltip glass */
+.si-card--tooltip {
+  background: var(--si-white-80);
+  backdrop-filter: blur(var(--si-blur-xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-xl));
+  border: 1px solid var(--si-white-70);
+  border-radius: var(--si-radius-md);
+  box-shadow: var(--si-shadow-tooltip);
+}
+
+/* Modal / overlay glass */
+.si-card--modal {
+  background: var(--si-white-80);
+  backdrop-filter: blur(var(--si-blur-2xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-2xl));
+  border: 1px solid var(--si-white-70);
+  border-radius: var(--si-radius-xl);
+  box-shadow: var(--si-shadow-modal);
+}
+
+/* Input field glass */
+.si-card--input {
+  background: var(--si-white-40);
+  backdrop-filter: blur(var(--si-blur-xl));
+  -webkit-backdrop-filter: blur(var(--si-blur-xl));
+  border: 1px solid var(--si-white-70);
+  border-radius: var(--si-radius-full);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(255,255,255,0.3);
+}
+
+
+/* ─── 3. BADGES ───────────────────────────────────────────────── */
+
+/* Base badge */
+.si-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--si-radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity var(--si-transition-fast);
+}
+
+/* ── Color Variants ── */
+
+.si-badge--blue {
+  background: var(--si-blue-10);
+  color: var(--si-blue-aa);
+}
+
+.si-badge--green {
+  background: var(--si-green-10);
+  color: var(--si-green);
+}
+
+.si-badge--amber {
+  background: var(--si-amber-10);
+  color: var(--si-amber-cc);
+}
+
+.si-badge--red {
+  background: var(--si-red-10);
+  color: var(--si-red-bb);
+}
+
+.si-badge--purple {
+  background: var(--si-purple-10);
+  color: var(--si-purple-55);
+}
+
+.si-badge--neutral {
+  background: var(--si-white-30);
+  color: var(--si-fg-25);
+}
+
+/* ── Semantic Variants ── */
+
+.si-badge--success {
+  background: var(--si-green-10);
+  color: var(--si-green);
+}
+
+.si-badge--warning {
+  background: var(--si-amber-10);
+  color: var(--si-amber-cc);
+}
+
+.si-badge--error {
+  background: var(--si-red-10);
+  color: var(--si-red-bb);
+}
+
+.si-badge--info {
+  background: var(--si-blue-10);
+  color: var(--si-blue-aa);
+}
+
+/* ── Status Dot Badge (with pulsing dot) ── */
+
+.si-badge--dot::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: si-pulse 2s ease-in-out infinite;
+}
+
+@keyframes si-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Section Divider Badge ── */
+
+.si-badge--section {
+  background: var(--si-white-30);
+  color: var(--si-fg-25);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: var(--si-radius-full);
+}
+
+
+/* ─── 4. BUTTONS ──────────────────────────────────────────────── */
+
+/* Base button reset */
+.si-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all var(--si-transition-fast);
+  white-space: nowrap;
+}
+
+.si-btn:hover {
+  opacity: 0.85;
+}
+
+.si-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Primary — Solid Blue ── */
+
+.si-btn--primary {
+  background: var(--si-blue);
+  color: var(--si-white);
+  padding: 8px 16px;
+  border-radius: var(--si-radius-md);
+  font-size: 13px;
+}
+
+.si-btn--primary:hover {
+  background: var(--si-blue-80);
+  opacity: 1;
+}
+
+/* ── Secondary — Ghost Blue ── */
+
+.si-btn--secondary {
+  background: var(--si-blue-8);
+  color: var(--si-blue-cc);
+  padding: 8px 16px;
+  border-radius: var(--si-radius-md);
+  font-size: 13px;
+}
+
+.si-btn--secondary:hover {
+  background: var(--si-blue-15);
+  opacity: 1;
+}
+
+/* ── Ghost — Minimal ── */
+
+.si-btn--ghost {
+  background: transparent;
+  color: var(--si-fg-50);
+  padding: 6px 12px;
+  border-radius: var(--si-radius-sm);
+  font-size: 12px;
+}
+
+.si-btn--ghost:hover {
+  background: var(--si-white-40);
+  opacity: 1;
+}
+
+/* ── Glass — Frosted button ── */
+
+.si-btn--glass {
+  background: var(--si-white-40);
+  backdrop-filter: blur(var(--si-blur-md));
+  -webkit-backdrop-filter: blur(var(--si-blur-md));
+  border: 1px solid var(--si-white-50);
+  color: var(--si-fg-65);
+  padding: 8px 16px;
+  border-radius: var(--si-radius-md);
+  font-size: 13px;
+}
+
+.si-btn--glass:hover {
+  background: var(--si-white-60);
+  opacity: 1;
+}
+
+/* ── Danger — Red ── */
+
+.si-btn--danger {
+  background: var(--si-red-10);
+  color: var(--si-red-bb);
+  padding: 8px 16px;
+  border-radius: var(--si-radius-md);
+  font-size: 13px;
+}
+
+.si-btn--danger:hover {
+  background: var(--si-red-20);
+  opacity: 1;
+}
+
+/* ── Icon Button — Small circular ── */
+
+.si-btn--icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--si-radius-sm);
+  background: transparent;
+  color: var(--si-fg-40);
+}
+
+.si-btn--icon:hover {
+  background: var(--si-white-60);
+  opacity: 1;
+}
+
+/* ── Suggestion Chip — Chat action buttons ── */
+
+.si-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--si-radius-md);
+  font-size: 11px;
+  font-weight: 480;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--si-transition-fast);
+}
+
+.si-chip:hover {
+  opacity: 0.75;
+}
+
+.si-chip--blue {
+  background: var(--si-blue-8);
+  color: var(--si-blue-cc);
+  border-color: rgba(19, 93, 255, 0.08);
+}
+
+.si-chip--amber {
+  background: var(--si-amber-8);
+  color: var(--si-amber-cc);
+  border-color: rgba(244, 120, 11, 0.08);
+}
+
+.si-chip--red {
+  background: var(--si-red-8);
+  color: var(--si-red-bb);
+  border-color: rgba(220, 38, 38, 0.08);
+}
+
+.si-chip--green {
+  background: var(--si-green-8);
+  color: var(--si-green);
+  border-color: rgba(22, 163, 74, 0.08);
+}
+
+
+/* ─── 5. GRADIENTS ────────────────────────────────────────────── */
+
+/* Background mesh gradient */
+.si-gradient--bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(19, 93, 255, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(124, 92, 252, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(244, 120, 11, 0.03) 0%, transparent 50%),
+    var(--si-background);
+}
+
+/* Morning time gradient */
+.si-gradient--morning {
+  background: linear-gradient(135deg, #f8faff 0%, #eef1f6 50%, #f0f4ff 100%);
+}
+
+/* Afternoon time gradient */
+.si-gradient--afternoon {
+  background: linear-gradient(135deg, #fff8f0 0%, #f6f0ea 50%, #fef6ee 100%);
+}
+
+/* Evening time gradient */
+.si-gradient--evening {
+  background: linear-gradient(135deg, #f0f0f8 0%, #eaecf4 50%, #f2f0fa 100%);
+}
+
+/* Blue accent gradient — for progress bars, highlights */
+.si-gradient--blue {
+  background: linear-gradient(135deg, var(--si-blue) 0%, #4F8AFF 100%);
+}
+
+/* AI / Purple gradient */
+.si-gradient--ai {
+  background: linear-gradient(135deg, var(--si-ai-purple) 0%, #9B7FFF 100%);
+}
+
+/* Specular highlight — top edge of glass cards */
+.si-gradient--specular {
+  background: linear-gradient(
+    90deg,
+    transparent 5%,
+    var(--si-white-95) 20%,
+    var(--si-white) 50%,
+    var(--si-white-95) 80%,
+    transparent 95%
+  );
+}
+
+/* Fade-to-bottom — for scroll overlays */
+.si-gradient--fade-bottom {
+  background: linear-gradient(to bottom, transparent 0%, var(--si-white-80) 100%);
+}
+
+/* Progress bar backgrounds */
+.si-gradient--progress-blue {
+  background: var(--si-blue-55);
+  border-radius: var(--si-radius-full);
+}
+
+.si-gradient--progress-amber {
+  background: var(--si-amber-66);
+  border-radius: var(--si-radius-full);
+}
+
+.si-gradient--progress-green {
+  background: var(--si-green);
+  border-radius: var(--si-radius-full);
+}
+
+
+/* ─── 6. AVATARS ──────────────────────────────────────────────── */
+
+.si-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--si-white-80);
+  flex-shrink: 0;
+}
+
+.si-avatar--sm {
+  width: 24px;
+  height: 24px;
+}
+
+.si-avatar--lg {
+  width: 36px;
+  height: 36px;
+}
+
+/* Overflow counter ("+5" avatar) */
+.si-avatar--overflow {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--si-fg-6);
+  border: 2px solid var(--si-white-80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--si-fg-40);
+}
+
+
+/* ─── 7. STATUS INDICATORS ────────────────────────────────────── */
+
+.si-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.si-status-dot--active {
+  background: var(--si-green);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.si-status-dot--warning {
+  background: var(--si-amber);
+  box-shadow: 0 0 0 2px rgba(244, 120, 11, 0.2);
+}
+
+.si-status-dot--error {
+  background: var(--si-red);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.si-status-dot--idle {
+  background: var(--si-fg-25);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.06);
+}
+
+/* Live pulsing ring */
+.si-status-dot--live {
+  position: relative;
+}
+
+.si-status-dot--live::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  animation: si-live-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes si-live-ping {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+
+/* ─── 8. PROGRESS BARS ───────────────────────────────────────── */
+
+.si-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--si-fg-6);
+  border-radius: var(--si-radius-full);
+  overflow: hidden;
+}
+
+.si-progress__bar {
+  height: 100%;
+  border-radius: var(--si-radius-full);
+  transition: width 1s ease;
+}
+
+.si-progress__bar--blue   { background: var(--si-blue-55); }
+.si-progress__bar--green  { background: var(--si-green); }
+.si-progress__bar--amber  { background: var(--si-amber-66); }
+.si-progress__bar--red    { background: var(--si-red); }
+
+
+/* ─── 9. LIST ROWS ───────────────────────────────────────────── */
+
+.si-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: var(--si-radius-md);
+  transition: background var(--si-transition-fast);
+}
+
+.si-row:hover {
+  background: var(--si-white-40);
+}
+
+/* Inner stat row — used in widget detail panels */
+.si-row--stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--si-radius-md);
+  background: var(--si-white-40);
+  border: 1px solid var(--si-white-50);
+}
+
+
+/* ─── 10. TAB / TOGGLE CONTROLS ──────────────────────────────── */
+
+.si-tabs {
+  display: flex;
+  align-items: center;
+  background: var(--si-white-30);
+  border-radius: var(--si-radius-full);
+  padding: 2px;
+}
+
+.si-tabs__tab {
+  padding: 4px 12px;
+  border-radius: var(--si-radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--si-fg-40);
+  cursor: pointer;
+  transition: all var(--si-transition-fast);
+  border: none;
+  background: transparent;
+}
+
+.si-tabs__tab--active {
+  background: var(--si-white);
+  color: var(--si-fg-75);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+
+/* ─── 11. TYPOGRAPHY HELPERS ─────────────────────────────────── */
+
+.si-text--primary   { color: var(--si-fg-75); }
+.si-text--secondary { color: var(--si-fg-50); }
+.si-text--muted     { color: var(--si-fg-40); }
+.si-text--faint     { color: var(--si-fg-25); }
+.si-text--blue      { color: var(--si-blue-cc); }
+.si-text--green     { color: var(--si-green); }
+.si-text--amber     { color: var(--si-amber-cc); }
+.si-text--red       { color: var(--si-red-bb); }
+.si-text--purple    { color: var(--si-purple-55); }
+
+.si-text--label {
+  font-size: 11px;
+  color: var(--si-fg-50);
+  font-weight: 500;
+}
+
+.si-text--metric {
+  font-size: 20px;
+  color: var(--si-fg-75);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.si-text--section-title {
+  font-size: 10px;
+  color: var(--si-fg-25);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+
+/* ─── 12. BACKDROP / OVERLAY ─────────────────────────────────── */
+
+.si-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 40;
+}
+
+.si-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(238, 241, 246, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 30;
+}
+
+
+/* ─── 13. UTILITY CLASSES ─────────────────────────────────────── */
+
+/* Blur backdrops */
+.si-blur-md  { backdrop-filter: blur(var(--si-blur-md));  -webkit-backdrop-filter: blur(var(--si-blur-md)); }
+.si-blur-lg  { backdrop-filter: blur(var(--si-blur-lg));  -webkit-backdrop-filter: blur(var(--si-blur-lg)); }
+.si-blur-xl  { backdrop-filter: blur(var(--si-blur-xl));  -webkit-backdrop-filter: blur(var(--si-blur-xl)); }
+.si-blur-2xl { backdrop-filter: blur(var(--si-blur-2xl)); -webkit-backdrop-filter: blur(var(--si-blur-2xl)); }
+
+/* Quick backgrounds */
+.si-bg-blue-tint     { background: var(--si-blue-6); }
+.si-bg-amber-tint    { background: var(--si-amber-8); }
+.si-bg-red-tint      { background: var(--si-red-8); }
+.si-bg-green-tint    { background: var(--si-green-8); }
+.si-bg-purple-tint   { background: var(--si-purple-8); }
+.si-bg-glass         { background: var(--si-white-40); }
+.si-bg-glass-hover   { background: var(--si-white-55); }
+
+/* Border helpers */
+.si-border-glass     { border: 1px solid var(--si-white-50); }
+.si-border-subtle    { border: 1px solid var(--si-white-30); }
+
+/* Glow effects */
+.si-glow--blue {
+  box-shadow: 0 0 20px rgba(19, 93, 255, 0.15),
+              0 0 40px rgba(19, 93, 255, 0.05);
+}
+
+.si-glow--green {
+  box-shadow: 0 0 20px rgba(22, 163, 74, 0.15),
+              0 0 40px rgba(22, 163, 74, 0.05);
+}
+
+.si-glow--amber {
+  box-shadow: 0 0 20px rgba(244, 120, 11, 0.15),
+              0 0 40px rgba(244, 120, 11, 0.05);
+}
+
+.si-glow--red {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15),
+              0 0 40px rgba(220, 38, 38, 0.05);
+}
+
+
+/* ─── 14. ANIMATIONS ──────────────────────────────────────────── */
+
+@keyframes si-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes si-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(6px); }
+}
+
+@keyframes si-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes si-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes si-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.si-animate--fade-in  { animation: si-fade-in 0.3s ease forwards; }
+.si-animate--scale-in { animation: si-scale-in 0.2s ease forwards; }
+.si-animate--slide-up { animation: si-slide-up 0.4s ease forwards; }
+
+/* Typing indicator shimmer */
+.si-animate--shimmer {
+  background: linear-gradient(90deg, var(--si-fg-10) 25%, var(--si-fg-25) 50%, var(--si-fg-10) 75%);
+  background-size: 200% 100%;
+  animation: si-shimmer 1.5s ease infinite;
+}
