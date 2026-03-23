@@ -35,7 +35,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     sidebarOpen: false,
 
     zoom: 1,
-    theme: "dark",
+    theme: "light",
     setTheme: (theme) => set({ theme }),
     toggleTheme: () => set({ theme: get().theme === "dark" ? "light" : "dark" }),
 

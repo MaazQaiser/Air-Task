@@ -1,17 +1,19 @@
 "use client";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { Task, CardType } from "@/types/task";
+import { Task, CardType, CanvasEdge } from "@/types/task";
 import { generateId } from "@/lib/utils";
 
-import { createCard, updateCard, deleteCard } from "@/lib/firestoreService";
+import { createCard, updateCard, deleteCard, createEdge, deleteEdge } from "@/lib/firestoreService";
 import { useAuthStore } from "@/stores/authStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 
 interface TaskState {
     tasks: Task[];
+    edges: CanvasEdge[];
     selectedId: string | null;
     setTasks: (tasks: Task[]) => void;
+    setEdges: (edges: CanvasEdge[]) => void;
     addTask: (type: CardType, position: { x: number; y: number }, title?: string) => string;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
@@ -21,14 +23,20 @@ interface TaskState {
     addChecklistItem: (taskId: string, label: string) => void;
     setSelected: (id: string | null) => void;
     updatePosition: (id: string, position: { x: number; y: number }) => void;
+    
+    // Edge actions
+    addConnection: (edge: CanvasEdge) => void;
+    removeConnection: (edgeId: string) => void;
 }
 
 export const useTaskStore = create<TaskState>()(
     immer((set, get) => ({
         tasks: [],
+        edges: [],
         selectedId: null,
 
         setTasks: (tasks) => set({ tasks }),
+        setEdges: (edges) => set({ edges }),
 
         addTask: (type, position, title) => {
             const id = generateId();
@@ -47,7 +55,7 @@ export const useTaskStore = create<TaskState>()(
                 pinned: false,
                 docked: false,
                 color: type === "task" ? "#00D4FF" : type === "note" ? "#10B981" : type === "sticker" ? "#f59e0b" : "#A855F7",
-                checklistItems: type === "checklist" ? [{ id: generateId(), label: "First item", done: false }] : undefined,
+                ...(type === "checklist" ? { checklistItems: [{ id: generateId(), label: "First item", done: false }] } : {}),
                 position,
                 createdAt: new Date().toISOString(),
             };
@@ -124,8 +132,37 @@ export const useTaskStore = create<TaskState>()(
             set((state) => { state.selectedId = id; });
         },
 
+
         updatePosition: (id, position) => {
             get().updateTask(id, { position });
+        },
+
+        addConnection: (edge) => {
+            const activeCanvasId = useCanvasStore.getState().activeCanvasId;
+            const user = useAuthStore.getState().user;
+            if (!user) return;
+
+            set((state) => {
+                state.edges.push(edge);
+            });
+
+            import("@/lib/firestoreService").then((m) => {
+                m.createEdge(user.uid, activeCanvasId, edge);
+            });
+        },
+
+        removeConnection: (edgeId) => {
+            const activeCanvasId = useCanvasStore.getState().activeCanvasId;
+            const user = useAuthStore.getState().user;
+            if (!user) return;
+
+            set((state) => {
+                state.edges = state.edges.filter((e) => e.id !== edgeId);
+            });
+
+            import("@/lib/firestoreService").then((m) => {
+                m.deleteEdge(user.uid, activeCanvasId, edgeId);
+            });
         },
     }))
 );

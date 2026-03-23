@@ -39,8 +39,25 @@ function StickerCard({ data, selected }: NodeProps<Task>) {
             transition={{ type: "spring", damping: 18, stiffness: 350 }}
             className={cn("group relative cursor-default", selected && "z-10")}
         >
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+            {/* Connection Handles */}
+            <Handle 
+                type="target" 
+                position={Position.Top} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: "#00b4ff", boxShadow: "0 0 8px rgba(0,180,255,0.4)" }}
+            />
+            <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: "#00b4ff", boxShadow: "0 0 8px rgba(0,180,255,0.4)" }}
+            />
 
             {/* Main sticker */}
             <div

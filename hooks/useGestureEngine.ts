@@ -3,8 +3,8 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { useTaskStore } from "@/stores/taskStore";
 import { gestureBridge } from "@/lib/gestureBridge";
 
-export type GestureType = "pinch" | "open" | "fist" | "panel" | "none";
-export type GesturePhase = "idle" | "ready" | "grabbing" | "panning" | "swiping" | "panel";
+export type GestureType = "pinch" | "open" | "fist" | "panel" | "point" | "peace" | "horns" | "none";
+export type GesturePhase = "idle" | "ready" | "grabbing" | "panning" | "swiping" | "panel" | "pointing" | "switching" | "sharing";
 
 export interface HandState {
     gesture: GestureType;
@@ -19,6 +19,8 @@ export interface HandState {
     panDeltaY: number;
     swipeProgress: number;
     frameCount: number;
+    pointHoldProgress: number;    // 0–1, fills up while holding point gesture
+    switchDirection: "left" | "right" | null; // peace-swipe direction
 }
 
 interface Landmark { x: number; y: number; z: number }
@@ -27,27 +29,138 @@ function dist(a: Landmark, b: Landmark) {
     return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
-// Lower factor = more responsive, less lag. 0.40 gives good precision + stability.
-function smooth(prev: number, next: number, factor = 0.40) {
-    return prev * factor + next * (1 - factor);
+// ── 1€ Adaptive Filter ────────────────────────────────────────────────
+// Gives near-zero lag during fast hand movements but strong jitter
+// reduction when the hand is still. Much better than fixed smoothing.
+// Reference: https://gery.casiez.net/1euro/
+class OneEuroFilter {
+    private xPrev: number;
+    private dxPrev: number;
+    private tPrev: number;
+    private initialized: boolean;
+
+    constructor(
+        private minCutoff: number = 1.0,   // lower = more smoothing at low speed
+        private beta: number = 0.007,      // higher = less lag during fast moves
+        private dCutoff: number = 1.0,     // cutoff for derivative filter
+    ) {
+        this.xPrev = 0;
+        this.dxPrev = 0;
+        this.tPrev = 0;
+        this.initialized = false;
+    }
+
+    private alpha(cutoff: number, dt: number): number {
+        const tau = 1.0 / (2 * Math.PI * cutoff);
+        return 1.0 / (1.0 + tau / dt);
+    }
+
+    filter(x: number, t: number): number {
+        if (!this.initialized) {
+            this.xPrev = x;
+            this.dxPrev = 0;
+            this.tPrev = t;
+            this.initialized = true;
+            return x;
+        }
+
+        const dt = Math.max(t - this.tPrev, 1e-6);
+        this.tPrev = t;
+
+        // Derivative (speed) estimation
+        const dx = (x - this.xPrev) / dt;
+        const aD = this.alpha(this.dCutoff, dt);
+        const dxFiltered = aD * dx + (1 - aD) * this.dxPrev;
+        this.dxPrev = dxFiltered;
+
+        // Adaptive cutoff: fast movement → higher cutoff → less smoothing
+        const cutoff = this.minCutoff + this.beta * Math.abs(dxFiltered);
+        const aX = this.alpha(cutoff, dt);
+        const xFiltered = aX * x + (1 - aX) * this.xPrev;
+        this.xPrev = xFiltered;
+
+        return xFiltered;
+    }
+
+    reset() {
+        this.initialized = false;
+    }
 }
 
-function classifyGesture(lm: Landmark[]): { gesture: GestureType; pinchDistance: number } {
-    const pinchDist = dist(lm[4], lm[8]);
-    if (pinchDist < 0.08) return { gesture: "pinch", pinchDistance: pinchDist };
+// ── Gesture Classification with Per-Gesture Confidence ─────────────────
+// Uses relative pinch threshold (ratio of pinch distance to palm size)
+// so it adapts to different hand sizes and camera distances.
+function palmSize(lm: Landmark[]): number {
+    // Wrist (0) to middle-finger MCP (9) — stable palm reference
+    return dist(lm[0], lm[9]);
+}
 
-    const up = [
-        lm[8].y < lm[6].y,   // index
-        lm[12].y < lm[10].y, // middle
-        lm[16].y < lm[14].y, // ring
-        lm[20].y < lm[18].y, // pinky
+interface ClassifyResult {
+    gesture: GestureType;
+    pinchDistance: number;
+    confidence: number;   // 0.0–1.0 how certain we are about this gesture
+}
+
+function classifyGesture(lm: Landmark[]): ClassifyResult {
+    const pinchDist = dist(lm[4], lm[8]);
+    const palm = palmSize(lm);
+
+    // Guard against degenerate frames
+    if (palm < 0.01) return { gesture: "none", pinchDistance: pinchDist, confidence: 0 };
+
+    // Relative pinch ratio — independent of hand size & camera distance
+    const pinchRatio = pinchDist / palm;
+
+    // Pinch: thumb tip close to index tip relative to palm
+    if (pinchRatio < 0.25) {
+        // Confidence ramps from 0.5 at the threshold to 1.0 at very tight pinch
+        const conf = Math.min(1.0, 0.5 + (0.25 - pinchRatio) * 4);
+        return { gesture: "pinch", pinchDistance: pinchDist, confidence: conf };
+    }
+
+    // Finger-up detection with hysteresis
+    const fingerExtension = [
+        (lm[6].y - lm[8].y) / palm,   // index: how far tip is above PIP
+        (lm[10].y - lm[12].y) / palm, // middle
+        (lm[14].y - lm[16].y) / palm, // ring
+        (lm[18].y - lm[20].y) / palm, // pinky
     ];
+
+    const UP_THRESHOLD = 0.04;   // normalize threshold to palm size
+    const up = fingerExtension.map(e => e > UP_THRESHOLD);
+    const [indexUp, middleUp, ringUp, pinkyUp] = up;
     const count = up.filter(Boolean).length;
 
-    if (count <= 1) return { gesture: "fist", pinchDistance: pinchDist };
-    if (count === 3) return { gesture: "panel", pinchDistance: pinchDist }; // 3 fingers = open details
-    if (count >= 4) return { gesture: "open", pinchDistance: pinchDist };
-    return { gesture: "none", pinchDistance: pinchDist };
+    // Average extension for confidence (how clearly extended/curled)
+    const avgExtension = fingerExtension.reduce((a, b) => a + Math.abs(b), 0) / 4;
+    const extensionConf = Math.min(1.0, avgExtension * 5);
+
+    // ── POINT: only index finger extended (👆) ──────────────────────────
+    if (count === 1 && indexUp && !middleUp && !ringUp && !pinkyUp) {
+        return { gesture: "point", pinchDistance: pinchDist, confidence: extensionConf };
+    }
+
+    // ── PEACE / V-SIGN: index + middle up, ring + pinky down (✌️) ──────
+    if (count === 2 && indexUp && middleUp && !ringUp && !pinkyUp) {
+        return { gesture: "peace", pinchDistance: pinchDist, confidence: extensionConf * 0.9 };
+    }
+
+    // ── HORNS / ROCK-ON: index + pinky up, middle + ring down (🤘) ─────
+    if (count === 2 && indexUp && !middleUp && !ringUp && pinkyUp) {
+        return { gesture: "horns", pinchDistance: pinchDist, confidence: extensionConf * 0.9 };
+    }
+
+    if (count <= 1) {
+        return { gesture: "fist", pinchDistance: pinchDist, confidence: extensionConf };
+    }
+    if (count === 3) {
+        // Panel gesture: exactly 3 fingers — medium confidence if 2 or 4 are close
+        return { gesture: "panel", pinchDistance: pinchDist, confidence: extensionConf * 0.85 };
+    }
+    if (count >= 4) {
+        return { gesture: "open", pinchDistance: pinchDist, confidence: extensionConf };
+    }
+    return { gesture: "none", pinchDistance: pinchDist, confidence: 0.3 };
 }
 
 const EMPTY: HandState = {
@@ -56,14 +169,22 @@ const EMPTY: HandState = {
     dragDeltaX: 0, dragDeltaY: 0,
     panDeltaX: 0, panDeltaY: 0,
     swipeProgress: 0, frameCount: 0,
+    pointHoldProgress: 0, switchDirection: null,
 };
 const SWIPE_THRESHOLD = 0.18;
+const GESTURE_COOLDOWN_MS = 150; // prevent rapid gesture toggling
+
+const SHARE_HOLD_MS = 1500;    // hold point gesture this long to share
+const SWITCH_THRESHOLD = 0.12; // peace-swipe distance to trigger canvas switch
 
 export function useGestureEngine(
     enabled: boolean,
     onZoom?: (delta: number) => void,
     onAutoSelect?: (x: number, y: number) => string | null | void,
     onPanelGesture?: () => void,
+    onCopyGesture?: () => void,
+    onPasteGesture?: (x: number, y: number) => void,
+    onSwitchCanvas?: (direction: "left" | "right") => void,
 ) {
     const [handState, setHandState] = useState<HandState>(EMPTY);
     const [isReady, setIsReady] = useState(false);
@@ -71,20 +192,38 @@ export function useGestureEngine(
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const rafRef = useRef<number>(0);
+
+    // 1€ Filters for cursor x/y (replaces fixed smoothing)
+    const filterX = useRef(new OneEuroFilter(1.5, 0.007, 1.0));
+    const filterY = useRef(new OneEuroFilter(1.5, 0.007, 1.0));
     const smoothX = useRef(0.5);
     const smoothY = useRef(0.5);
+
     const lastGesture = useRef<GestureType>("none");
     const gestureFrames = useRef(0);
+    const lastGestureChangeTime = useRef(0);  // cooldown timestamp
     const swipeStartX = useRef<number | null>(null);
     const prevPinchX = useRef<number | null>(null);
     const prevPinchY = useRef<number | null>(null);
     const prevFistX = useRef<number | null>(null);  // for canvas pan
     const prevFistY = useRef<number | null>(null);
+    const prevPeaceX = useRef<number | null>(null);
     const twoHandPrevDist = useRef<number | null>(null);
     const isDragging = useRef(false);
     const noHandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const draggedPos = useRef<{ x: number; y: number } | null>(null);
     const panelFired = useRef(false); // prevent repeated panel opens
+    const pointHoldFrames = useRef(0);
+    const gestureActionFired = useRef(false);
+
+    // Point and Horns state
+    const pointStartTime = useRef<number | null>(null);
+    const hornsStartTime = useRef<number | null>(null);
+    const shareFired = useRef(false);
+
+    // Peace-to-switch state
+    const peaceStartX = useRef<number | null>(null);
+    const switchFired = useRef(false);
 
     // Refs into Zustand — always fresh in the rAF loop
     const tasksRef = useRef(useTaskStore.getState().tasks);
@@ -112,6 +251,8 @@ export function useGestureEngine(
         setIsReady(false);
         setHandState(EMPTY);
         isDragging.current = false;
+        filterX.current.reset();
+        filterY.current.reset();
     }, []);
 
     useEffect(() => {
@@ -137,8 +278,13 @@ export function useGestureEngine(
                     numHands: 2,
                 });
 
+                // Higher resolution for better landmark precision
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480, facingMode: "user" },
+                    video: {
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 },
+                        facingMode: "user",
+                    },
                 });
                 if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
 
@@ -156,6 +302,7 @@ export function useGestureEngine(
 
                     const result = detector.detectForVideo(videoRef.current, time);
                     const numHands = result.landmarks?.length ?? 0;
+                    const now = performance.now();
 
                     // ── TWO-HAND ZOOM ──────────────────────────────────────────────
                     if (numHands === 2) {
@@ -167,7 +314,7 @@ export function useGestureEngine(
                             if (Math.abs(delta) > 0.008) onZoom?.(delta * 14);
                         }
                         twoHandPrevDist.current = d;
-                        setHandState((p) => ({ ...p, gesture: "open", phase: "idle", confidence: 1 }));
+                        setHandState((p) => ({ ...p, gesture: "open", phase: "idle", confidence: 1, shareHoldProgress: 0, switchDirection: null }));
                         rafRef.current = requestAnimationFrame(frame);
                         return;
                     }
@@ -186,6 +333,10 @@ export function useGestureEngine(
                         prevFistY.current = null;
                         swipeStartX.current = null;
                         panelFired.current = false;
+                        hornsStartTime.current = null;
+                        shareFired.current = false;
+                        peaceStartX.current = null;
+                        switchFired.current = false;
 
                         if (noHandTimer.current) clearTimeout(noHandTimer.current);
                         noHandTimer.current = setTimeout(() => setSelectedRef.current(null), 1200);
@@ -199,7 +350,8 @@ export function useGestureEngine(
 
                     // ── SINGLE HAND ────────────────────────────────────────────────
                     const lm = result.landmarks[0];
-                    const { gesture, pinchDistance } = classifyGesture(lm as Landmark[]);
+                    const { gesture, pinchDistance, confidence: gestureConfidence } =
+                        classifyGesture(lm as Landmark[]);
 
                     // ── CURSOR TRACKING POINT ──────────────────────────────────────
                     // Index fingertip (lm[8]) is the most precise pointer — it's where
@@ -213,23 +365,34 @@ export function useGestureEngine(
                         ? (tip4.y + tip8.y) / 2
                         : tip8.y;
 
-                    // Mirror x (selfie camera), smooth to reduce jitter
-                    smoothX.current = smooth(smoothX.current, 1 - rawPX, 0.40);
-                    smoothY.current = smooth(smoothY.current, rawPY, 0.40);
+                    // Mirror x (selfie camera), apply 1€ adaptive filter
+                    const timeInSeconds = now / 1000;
+                    smoothX.current = filterX.current.filter(1 - rawPX, timeInSeconds);
+                    smoothY.current = filterY.current.filter(rawPY, timeInSeconds);
 
-                    // Debounce gestures (3 frames to confirm)
+                    // Debounce gestures (3 frames to confirm) with cooldown
                     if (gesture === lastGesture.current) {
                         gestureFrames.current = Math.min(gestureFrames.current + 1, 99);
                     } else {
-                        gestureFrames.current = 0;
-                        lastGesture.current = gesture;
+                        // Cooldown: ignore rapid changes within GESTURE_COOLDOWN_MS
+                        if (now - lastGestureChangeTime.current < GESTURE_COOLDOWN_MS) {
+                            // Keep previous gesture, don't reset frame count
+                        } else {
+                            gestureFrames.current = 0;
+                            lastGesture.current = gesture;
+                            lastGestureChangeTime.current = now;
+                            pointHoldFrames.current = 0;
+                            gestureActionFired.current = false;
+                        }
                     }
-                    const confirmed = gestureFrames.current >= 3 ? gesture : "none";
+                    const confirmed = gestureFrames.current >= 3 ? lastGesture.current : "none";
 
                     const sid = selectedIdRef.current;
                     let dragDeltaX = 0, dragDeltaY = 0;
                     let panDeltaX = 0, panDeltaY = 0;
                     let swipeProgress = 0;
+                    let pointHoldProgress = 0;
+                    let switchDirection: "left" | "right" | null = null;
                     let phase: GesturePhase = "idle";
 
                     // ── OPEN HAND → deselect immediately ──────────────────────────
@@ -241,7 +404,10 @@ export function useGestureEngine(
                         isDragging.current = false;
                         prevPinchX.current = null;
                         prevPinchY.current = null;
+                        prevPeaceX.current = null;
                         panelFired.current = false;
+                        gestureActionFired.current = false;
+                        pointHoldFrames.current = 0;
                         setSelectedRef.current(null);
                         phase = "idle";
                     }
@@ -306,6 +472,8 @@ export function useGestureEngine(
                         panelFired.current = false;
                     }
 
+
+
                     // ── FIST → PAN CANVAS (+ swipe-to-dock) ──────────────────────
                     if (confirmed === "fist") {
                         phase = "panning";
@@ -340,19 +508,72 @@ export function useGestureEngine(
                         swipeStartX.current = null;
                     }
 
+                    // ── POINT → JUST POINTER & AUTO-SELECT ────────────────────────
+                    if (confirmed === "point") {
+                        phase = "pointing";
+                        if (pointStartTime.current === null) {
+                            pointStartTime.current = now;
+                            shareFired.current = false;
+                            
+                            // Aggressively target item under pointer
+                            const newSid = onAutoSelect?.(smoothX.current, smoothY.current);
+                            if (newSid !== undefined) selectedIdRef.current = newSid;
+                        }
+                        const elapsed = now - pointStartTime.current;
+                        pointHoldProgress = Math.min(elapsed / SHARE_HOLD_MS, 1);
+
+                        if (pointHoldProgress >= 1 && !shareFired.current) {
+                            if (selectedIdRef.current) {
+                                onCopyGesture?.();
+                            } else {
+                                onPasteGesture?.(smoothX.current, smoothY.current);
+                            }
+                            shareFired.current = true;
+                        }
+                    } else {
+                        pointStartTime.current = null;
+                        shareFired.current = false;
+                    }
+
+                    // ── PEACE / V-SIGN → SWITCH CANVAS (swipe L/R) ────────────────
+                    if (confirmed === "peace") {
+                        phase = "switching";
+                        if (peaceStartX.current === null) {
+                            peaceStartX.current = smoothX.current;
+                            switchFired.current = false;
+                        }
+                        const dx = smoothX.current - peaceStartX.current;
+
+                        if (Math.abs(dx) > SWITCH_THRESHOLD && !switchFired.current) {
+                            switchDirection = dx > 0 ? "right" : "left";
+                            onSwitchCanvas?.(switchDirection);
+                            switchFired.current = true;
+                            // Reset origin so they can swipe again after returning
+                            peaceStartX.current = smoothX.current;
+                        } else if (!switchFired.current && Math.abs(dx) > 0.03) {
+                            // Show preview direction while swiping
+                            switchDirection = dx > 0 ? "right" : "left";
+                        }
+                    } else {
+                        peaceStartX.current = null;
+                        switchFired.current = false;
+                    }
+
                     setHandState({
                         gesture: confirmed,
                         phase,
                         x: smoothX.current,
                         y: smoothY.current,
                         pinchDistance,
-                        confidence: 1,
+                        confidence: gestureConfidence,
                         dragDeltaX,
                         dragDeltaY,
                         panDeltaX,
                         panDeltaY,
                         swipeProgress,
                         frameCount: gestureFrames.current,
+                        pointHoldProgress,
+                        switchDirection,
                     });
 
                     rafRef.current = requestAnimationFrame(frame);
@@ -371,7 +592,7 @@ export function useGestureEngine(
 
         init();
         return () => { active = false; stop(); };
-    }, [enabled, stop, onZoom, onAutoSelect, onPanelGesture]);
+    }, [enabled, stop, onZoom, onAutoSelect, onPanelGesture, onCopyGesture, onPasteGesture, onSwitchCanvas]);
 
     return { handState, isReady, error };
 }

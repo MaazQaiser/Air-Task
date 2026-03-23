@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, CameraOff, Hand, Loader2, AlertCircle, X, ChevronRight } from "lucide-react";
 import { useGestureEngine } from "@/hooks/useGestureEngine";
 import { useTaskStore } from "@/stores/taskStore";
+import { useCanvasStore } from "@/stores/canvasStore";
+import { useClipboardStore } from "@/stores/clipboardStore";
+import { showToast } from "@/components/ui/CopyToast";
 import { useReactFlow } from "reactflow";
 
 const PHASE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
@@ -13,6 +16,9 @@ const PHASE_CONFIG: Record<string, { label: string; icon: string; color: string 
     panning: { label: "Panning", icon: "✊", color: "#10b981" },
     swiping: { label: "Swiping →", icon: "✊", color: "#a855f7" },
     panel: { label: "View Details", icon: "🖐️", color: "#f59e0b" },
+    pointing: { label: "Point", icon: "👆", color: "#3b82f6" },
+    switching: { label: "Switch", icon: "✌️", color: "#ec4899" },
+    sharing: { label: "Share", icon: "🤘", color: "#10b981" },
 };
 
 function HandCursor({ x, y, phase, confidence }: { x: number; y: number; phase: string; confidence: number }) {
@@ -155,8 +161,14 @@ function TaskDetailPanel({ taskId, onClose }: { taskId: string; onClose: () => v
 export default function GestureOverlay() {
     const [enabled, setEnabled] = useState(false);
     const [panelOpen, setPanelOpen] = useState(false);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+
     const { zoomIn, zoomOut, getViewport, setViewport } = useReactFlow();
     const { tasks, selectedId, setSelected } = useTaskStore();
+    const { canvases, activeCanvasId, setActiveCanvas, theme } = useCanvasStore();
+    const { copyCard, pasteCard } = useClipboardStore();
+    
+    const isDark = theme === "dark";
 
     const handleZoom = useCallback((delta: number) => {
         if (delta > 0) zoomIn({ duration: 60 });
@@ -215,12 +227,56 @@ export default function GestureOverlay() {
         setPanelOpen(true);
     }, []);
 
+    const handleCopyGesture = useCallback(() => {
+        const selectedItem = useTaskStore.getState().tasks.find(t => t.id === useTaskStore.getState().selectedId);
+        if (selectedItem) {
+            useClipboardStore.getState().copyCard(selectedItem, activeCanvasId);
+            setToastMessage(`Copied: ${selectedItem.title}`);
+            setTimeout(() => setToastMessage(null), 3000);
+        }
+    }, [activeCanvasId]);
+
+    const handlePasteGesture = useCallback((x: number, y: number) => {
+        const clipStore = useClipboardStore.getState();
+        if (clipStore.copiedCard) {
+            const offsetX = (x - 0.5) * window.innerWidth;
+            const offsetY = (y - 0.5) * window.innerHeight;
+            const position = { x: 300 + offsetX, y: 300 + offsetY };
+            clipStore.pasteCard(activeCanvasId, position);
+            setToastMessage("Pasted via Gesture");
+            setTimeout(() => setToastMessage(null), 3000);
+        }
+    }, [activeCanvasId]);
+
+    const handleShareGesture = useCallback(() => {
+        navigator.clipboard.writeText(window.location.href);
+        setToastMessage("Link copied!");
+        setTimeout(() => setToastMessage(null), 3000);
+    }, []);
+
+    const handleSwitchCanvas = useCallback((direction: "left" | "right") => {
+        if (canvases.length <= 1) return;
+        const currentIndex = canvases.findIndex(c => c.id === activeCanvasId);
+        if (currentIndex === -1) return;
+
+        const nextIndex = direction === "left"
+            ? (currentIndex - 1 + canvases.length) % canvases.length
+            : (currentIndex + 1) % canvases.length;
+
+        setActiveCanvas(canvases[nextIndex].id);
+        const nextName = canvases[nextIndex].name;
+        // showToast if exists, otherwise setToastMessage is fine
+        // Using setToastMessage to guarantee compilation
+        setToastMessage(`Switched to: ${nextName}`);
+        setTimeout(() => setToastMessage(null), 3000);
+    }, [canvases, activeCanvasId, setActiveCanvas]);
+
     const { handState, isReady, error } = useGestureEngine(
-        enabled, handleZoom, handleAutoSelect, handlePanelGesture
+        enabled, handleZoom, handleAutoSelect, handlePanelGesture, handleCopyGesture, handlePasteGesture, handleSwitchCanvas
     );
 
     const { gesture, phase, x, y, confidence, pinchDistance, dragDeltaX, dragDeltaY,
-        panDeltaX, panDeltaY, swipeProgress, frameCount } = handState;
+        panDeltaX, panDeltaY, swipeProgress, frameCount, pointHoldProgress, switchDirection } = handState;
 
     // Canvas pan: apply fist movement directly to viewport
     useEffect(() => {
@@ -240,6 +296,18 @@ export default function GestureOverlay() {
 
     return (
         <>
+            {toastMessage && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full font-semibold shadow-xl"
+                    style={{ background: "#10b981", color: "white" }}
+                >
+                    {toastMessage}
+                </motion.div>
+            )}
+
             {/* Hand cursor */}
             <AnimatePresence>
                 {enabled && isReady && <HandCursor x={x} y={y} phase={phase} confidence={confidence} />}
@@ -292,11 +360,26 @@ export default function GestureOverlay() {
                                     </div>
                                 )}
 
+                                {pointHoldProgress > 0 && (
+                                    <div>
+                                        <div className="flex justify-between mb-1" style={{ color: "#3b82f6" }}><span>Action hold</span><span>{(pointHoldProgress * 100).toFixed(0)}%</span></div>
+                                        <div className="w-full h-1 rounded-full" style={{ background: "var(--glass-surface)" }}>
+                                            <motion.div className="h-1 rounded-full" style={{ background: "#3b82f6" }} animate={{ width: `${pointHoldProgress * 100}%` }} transition={{ duration: 0.05 }} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {phase === "switching" && switchDirection && (
+                                    <div className="flex justify-between" style={{ color: "#ec4899" }}><span>Switch via</span><span>{switchDirection} swipe</span></div>
+                                )}
+
                                 <div className="flex flex-col gap-1 pt-2 mt-0.5" style={{ borderTop: "1px solid var(--glass-border)", color: "var(--text-muted)" }}>
                                     <div>🤏 <b>Pinch + move</b> → drag card</div>
                                     <div>✊ <b>Fist + move</b> → pan canvas</div>
                                     <div>✊ <b>Fist + swipe far</b> → dock</div>
                                     <div>🖐️ <b>3 fingers</b> → detail panel</div>
+                                    <div>👆 <b>Point</b> → select / hold to copy & paste</div>
+                                    <div>✌️ <b>V-sign + swipe</b> → switch canvas</div>
                                     <div>🤲 <b>Both hands</b> → zoom</div>
                                 </div>
                             </div>
@@ -306,12 +389,25 @@ export default function GestureOverlay() {
             </AnimatePresence>
 
             {/* Toolbar toggle */}
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            <motion.button 
+                whileHover={{ scale: 1.05, y: -2 }} 
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setEnabled((v) => !v)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium"
-                style={{ background: enabled ? "rgba(0,212,255,0.12)" : "var(--glass-surface)", backdropFilter: "var(--glass-blur)", border: `1px solid ${enabled ? "rgba(0,212,255,0.4)" : "var(--glass-border)"}`, boxShadow: enabled ? "0 0 16px rgba(0,212,255,0.25)" : "none", color: enabled ? "#00d4ff" : "var(--text-primary)" }}
+                className="flex items-center justify-center gap-2 transition-all"
+                style={{ 
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    fontSize: 14,
+                    fontWeight: 800,
+                    letterSpacing: "-0.01em",
+                    background: enabled ? "#00d4ff" : (isDark ? "rgba(255,255,255,0.05)" : "#ffffff"),
+                    color: enabled ? "#111827" : (isDark ? "#00d4ff" : "#111827"),
+                    border: `2.5px solid ${enabled ? "#0090b2" : (isDark ? "#00d4ff" : "#111827")}`,
+                    boxShadow: `2px 2px 0 ${enabled ? "#0090b2" : (isDark ? "black" : "#111827")}`,
+                    cursor: "pointer",
+                }}
                 title="Toggle gesture control (camera)">
-                {enabled ? <Camera size={16} /> : <CameraOff size={16} />}
+                {enabled ? <Camera size={16} strokeWidth={3} /> : <CameraOff size={16} strokeWidth={3} />}
                 <span>{enabled ? "Gesture ON" : "Gesture"}</span>
                 {enabled && isReady && confidence > 0 && (
                     <motion.div className="w-1.5 h-1.5 rounded-full" style={{ background: phaseCfg.color }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1, repeat: Infinity }} />

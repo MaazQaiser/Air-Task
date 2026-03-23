@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, X } from "lucide-react";
 import { useTaskStore } from "@/stores/taskStore";
 import { useCanvasStore } from "@/stores/canvasStore";
+import { useClipboardStore } from "@/stores/clipboardStore";
+import { showToast } from "@/components/ui/CopyToast";
 import { cn } from "@/lib/utils";
 
 function stripFiller(s: string) {
@@ -14,7 +16,9 @@ type VoiceResult =
     | { kind: "card"; type: "task" | "checklist" | "note"; title: string }
     | { kind: "canvas"; action: "create"; name: string }
     | { kind: "canvas"; action: "share" }
-    | { kind: "canvas"; action: "open" };
+    | { kind: "canvas"; action: "open" }
+    | { kind: "clipboard"; action: "copy" | "paste" | "duplicate" }
+    | { kind: "clipboard"; action: "copy_to" | "move_to"; targetCanvasName: string };
 
 function parseVoiceCommand(transcript: string): VoiceResult | null {
     const t = transcript.trim();
@@ -32,9 +36,26 @@ function parseVoiceCommand(transcript: string): VoiceResult | null {
         return { kind: "canvas", action: "create", name: stripFiller(canvasM[1] || "") || "New Canvas" };
     }
 
-    // ── CANVAS: open workspace sidebar ─────────────────────────────
+    // ── CANVASES: open workspace sidebar ─────────────────────────────
     if (/^(open|show|toggle)\s+(the\s+)?(workspace|sidebar|canvas\s*list|canvases)/i.test(t)) {
         return { kind: "canvas", action: "open" };
+    }
+
+    // ── CLIPBOARD: copy / paste / move ────────────────────────────────
+    const moveToM = t.match(/^(?:move)\s+(?:this|it|the\s+card|selected|task|note|list)\s+to\s+(.*)/i);
+    if (moveToM) return { kind: "clipboard", action: "move_to", targetCanvasName: stripFiller(moveToM[1]) };
+
+    const copyToM = t.match(/^(?:copy|send)\s+(?:this|it|the\s+card|selected|task|note|list)\s+to\s+(.*)/i);
+    if (copyToM) return { kind: "clipboard", action: "copy_to", targetCanvasName: stripFiller(copyToM[1]) };
+
+    if (/^(copy)\s+(this|it|selected|the\s+card|task|note|list)$/i.test(t) || /^copy$/i.test(t)) {
+        return { kind: "clipboard", action: "copy" };
+    }
+    if (/^(paste)(?:\s+(here|it))?$/i.test(t)) {
+        return { kind: "clipboard", action: "paste" };
+    }
+    if (/^(duplicate|clone)(?:\s+(this|it|selected|the\s+card|task|note|list))?$/i.test(t)) {
+        return { kind: "clipboard", action: "duplicate" };
     }
 
     // ── CARD: task ──────────────────────────────────────────────────
@@ -68,6 +89,9 @@ export default function VoiceHUD() {
     const [status, setStatus] = useState<"idle" | "listening" | "processing" | "success" | "error">("idle");
     const [feedbackMsg, setFeedbackMsg] = useState("");
     const [supported, setSupported] = useState(true);
+
+    const { theme } = useCanvasStore();
+    const isDark = theme === "dark";
 
     const transcriptRef = useRef("");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,6 +183,57 @@ export default function VoiceHUD() {
                         setFeedbackMsg("✓ Workspace sidebar opened");
                     }
                     clearAfter(2500);
+                } else if (result.kind === "clipboard") {
+                    const taskStore = useTaskStore.getState();
+                    const canvasStore = useCanvasStore.getState();
+                    const clipStore = useClipboardStore.getState();
+                    
+                    const activeCanvasId = canvasStore.activeCanvasId;
+                    const selectedItem = taskStore.tasks.find(t => t.id === taskStore.selectedId);
+
+                    if (result.action === "paste") {
+                        if (clipStore.copiedCard) {
+                            clipStore.pasteCard(activeCanvasId);
+                            setStatus("success");
+                            setFeedbackMsg("✓ Pasted successfully");
+                            showToast("Pasted", "✨", "#10b981");
+                        } else {
+                            setStatus("error");
+                            setFeedbackMsg("Clipboard is empty");
+                        }
+                    } else if (!selectedItem) {
+                        setStatus("error");
+                        setFeedbackMsg("Select a card first");
+                    } else {
+                        // Actions requiring a selected card
+                        if (result.action === "copy") {
+                            clipStore.copyCard(selectedItem, activeCanvasId);
+                            setStatus("success");
+                            setFeedbackMsg(`✓ Copied: "${selectedItem.title}"`);
+                            showToast(`Copied: ${selectedItem.title}`, "📋", "#00d4ff");
+                        } else if (result.action === "duplicate") {
+                            clipStore.copyCard(selectedItem, activeCanvasId);
+                            clipStore.pasteCard(activeCanvasId);
+                            setStatus("success");
+                            setFeedbackMsg(`✓ Duplicated: "${selectedItem.title}"`);
+                        } else if (result.action === "copy_to" || result.action === "move_to") {
+                            const targetQuery = result.targetCanvasName.toLowerCase();
+                            const targetCanvas = canvasStore.canvases.find(c => c.name.toLowerCase().includes(targetQuery));
+                            if (targetCanvas) {
+                                const isCut = result.action === "move_to";
+                                clipStore.copyCard(selectedItem, activeCanvasId, isCut);
+                                clipStore.pasteCard(targetCanvas.id);
+                                setStatus("success");
+                                const actionVerb = isCut ? "Moved" : "Copied";
+                                setFeedbackMsg(`✓ ${actionVerb} to ${targetCanvas.name}`);
+                                showToast(`${actionVerb} to ${targetCanvas.name}`, isCut ? "✂️" : "📋", isCut ? "#ef4444" : "#00d4ff");
+                            } else {
+                                setStatus("error");
+                                setFeedbackMsg(`Canvas not found: "${result.targetCanvasName}"`);
+                            }
+                        }
+                    }
+                    clearAfter(2500);
                 }
             }, 300);
         };
@@ -181,22 +256,27 @@ export default function VoiceHUD() {
         <>
             {/* Mic trigger button */}
             <motion.button
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={listening ? stopListening : startListening}
                 className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all"
+                    "flex items-center justify-center gap-2 transition-all"
                 )}
                 style={{
-                    background: listening ? "var(--accent-danger)" : "var(--glass-surface)",
-                    backdropFilter: "var(--glass-blur)",
-                    border: `1px solid ${listening ? "var(--accent-danger)" : "var(--glass-border)"}`,
-                    boxShadow: listening ? "0 0 20px rgba(239,68,68,0.5)" : "none",
-                    color: listening ? "white" : "var(--text-primary)",
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    fontSize: 14,
+                    fontWeight: 800,
+                    letterSpacing: "-0.01em",
+                    background: listening ? "#ef4444" : (isDark ? "rgba(255,255,255,0.05)" : "#ffffff"),
+                    color: listening ? "white" : (isDark ? "#ef4444" : "#111827"),
+                    border: `2.5px solid ${listening ? "#b91c1c" : (isDark ? "#ef4444" : "#111827")}`,
+                    boxShadow: `2px 2px 0 ${listening ? "#b91c1c" : (isDark ? "black" : "#111827")}`,
+                    cursor: "pointer",
                 }}
                 title="Voice Command — say 'Add task: ...', 'Create new canvas: ...', 'Share canvas', or 'Open workspace'"
             >
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
+                {listening ? <MicOff size={16} strokeWidth={3} /> : <Mic size={16} strokeWidth={3} />}
                 <span>{listening ? "Listening..." : "Voice"}</span>
             </motion.button>
 

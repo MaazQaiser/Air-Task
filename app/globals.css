@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
 /* ============================================
@@ -46,16 +46,16 @@
    DESIGN TOKENS — LIGHT MODE (CRYSTAL)
    ============================================ */
 [data-theme="light"] {
-  --bg-base: #f0f2f7;
+  --bg-base: #f5f7fb;
   --bg-gradient-from: #ffffff;
-  --bg-gradient-to: #e8ecf3;
-  --bg-pattern: rgba(99, 102, 241, 0.04);
+  --bg-gradient-to: #edf0f8;
+  --bg-pattern: rgba(99, 102, 241, 0.03);
 
-  --glass-surface: rgba(255, 255, 255, 0.7);
-  --glass-surface-hover: rgba(255, 255, 255, 0.85);
-  --glass-surface-active: rgba(99, 102, 241, 0.08);
-  --glass-border: rgba(99, 102, 241, 0.15);
-  --glass-border-hover: rgba(99, 102, 241, 0.4);
+  --glass-surface: rgba(255, 255, 255, 0.82);
+  --glass-surface-hover: rgba(255, 255, 255, 0.95);
+  --glass-surface-active: rgba(99, 102, 241, 0.06);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(0, 0, 0, 0.15);
   --glass-blur: blur(24px) saturate(200%);
 
   --accent-primary: #6366f1;
@@ -64,22 +64,24 @@
   --accent-warning: #d97706;
   --accent-danger: #dc2626;
   --accent-pink: #db2777;
+  --accent-cyan: #06b6d4;
+  --accent-orange: #f97316;
 
-  --text-primary: #1e293b;
-  --text-secondary: rgba(30, 41, 59, 0.65);
-  --text-muted: rgba(30, 41, 59, 0.38);
+  --text-primary: #111827;
+  --text-secondary: rgba(17, 24, 39, 0.6);
+  --text-muted: rgba(17, 24, 39, 0.35);
 
-  --glow-cyan: 0 0 20px rgba(99, 102, 241, 0.2), 0 4px 20px rgba(99, 102, 241, 0.1);
-  --glow-violet: 0 0 20px rgba(139, 92, 246, 0.2), 0 4px 20px rgba(139, 92, 246, 0.1);
-  --glow-green: 0 0 16px rgba(5, 150, 105, 0.18);
-  --glow-amber: 0 0 16px rgba(217, 119, 6, 0.18);
-  --glow-red: 0 0 16px rgba(220, 38, 38, 0.2);
+  --glow-cyan: 0 0 16px rgba(99, 102, 241, 0.12);
+  --glow-violet: 0 0 16px rgba(139, 92, 246, 0.12);
+  --glow-green: 0 0 12px rgba(5, 150, 105, 0.1);
+  --glow-amber: 0 0 12px rgba(217, 119, 6, 0.1);
+  --glow-red: 0 0 12px rgba(220, 38, 38, 0.12);
 
-  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
-  --card-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --card-shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
 
-  --toolbar-bg: rgba(255, 255, 255, 0.9);
-  --dock-bg: rgba(255, 255, 255, 0.92);
+  --toolbar-bg: rgba(255, 255, 255, 0.92);
+  --dock-bg: rgba(255, 255, 255, 0.94);
 }
 
 /* ============================================
@@ -98,7 +100,7 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -239,6 +241,20 @@ h4 {
   color: var(--text-muted);
 }
 
+[data-theme="light"] .input {
+  background: #ffffff;
+  border: 3px solid #111827;
+  border-radius: 12px;
+  color: #111827;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+[data-theme="light"] .input:focus {
+  box-shadow: 4px 4px 0 #111827;
+  border-color: #111827;
+}
+
 .input:focus {
   border-color: rgba(0, 212, 255, 0.5);
   box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
@@ -288,6 +304,37 @@ h4 {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.09);
+}
+
+/* Light mode button overrides */
+[data-theme="light"] .btn {
+  background: #ffffff;
+  border: 3px solid #111827;
+  color: #111827;
+  box-shadow: 4px 4px 0 #111827;
+  border-radius: 12px;
+  font-weight: 800;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] .btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0 #111827;
+  filter: none;
+}
+
+[data-theme="light"] .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #111827;
+}
+
+[data-theme="light"] .btn-primary {
+  background: #a855f7;
+  color: #111827; /* Dark text for contrast */
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background: #d8b4fe; /* Lighter purple */
 }
 
 /* Form group — label + input unit */
@@ -340,6 +387,23 @@ h4 {
   box-shadow: var(--card-shadow-elevated), var(--glow-cyan);
 }
 
+/* Light-mode card overrides — thick borders, white bg, chunky corners */
+[data-theme="light"] .glass {
+  background: #ffffff !important;
+  border: 3px solid #111827 !important;
+  border-radius: 20px !important;
+  box-shadow: 4px 4px 0 #111827 !important;
+  backdrop-filter: none !important;
+}
+[data-theme="light"] .glass:hover {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0 #111827 !important;
+}
+[data-theme="light"] .glass-elevated {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 6px 6px 0 var(--accent-primary) !important;
+}
+
 /* ============================================
    CANVAS BACKGROUND — DOT MATRIX
    ============================================ */
@@ -352,8 +416,8 @@ h4 {
 
 [data-theme="light"] .canvas-bg {
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
 }
 
 /* ============================================

@@ -10,6 +10,7 @@ import ReactFlow, {
     addEdge,
     Connection,
     ReactFlowInstance,
+    ConnectionMode,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useCallback, useEffect, useRef } from "react";
@@ -21,6 +22,11 @@ import NoteCard from "@/components/cards/NoteCard";
 import StickerCard from "@/components/cards/StickerCard";
 import { Task } from "@/types/task";
 import { gestureBridge } from "@/lib/gestureBridge";
+import { useClipboardStore } from "@/stores/clipboardStore";
+import CanvasPicker from "@/components/ui/CanvasPicker";
+import CopyToast, { showToast } from "@/components/ui/CopyToast";
+import { generateId } from "@/lib/utils";
+import { CanvasEdge } from "@/types/task";
 
 const nodeTypes: NodeTypes = {
     task: TaskCard,
@@ -30,10 +36,16 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function TaskCanvas() {
-    const { tasks, setSelected, updatePosition, selectedId } = useTaskStore();
-    const { theme } = useCanvasStore();
+    const { tasks, selectedId, edges: storeEdges, setSelected, updatePosition, addConnection, removeConnection } = useTaskStore();
+    const { theme, activeCanvasId } = useCanvasStore();
+    const { copyCard, pasteCard, copiedCard } = useClipboardStore();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+    // Sync store edges to React Flow
+    useEffect(() => {
+        setEdges(storeEdges);
+    }, [storeEdges, setEdges]);
 
     // Fit viewport only once on initial data load
     const rfInstance = useRef<ReactFlowInstance | null>(null);
@@ -88,14 +100,25 @@ export default function TaskCanvas() {
     }, []);
 
     const onConnect = useCallback(
-        (params: Connection) =>
-            setEdges((eds) =>
-                addEdge(
-                    { ...params, animated: true, style: { stroke: "var(--accent-primary)", strokeOpacity: 0.4 } },
-                    eds
-                )
-            ),
-        [setEdges]
+        (params: Connection) => {
+            if (!params.source || !params.target) return;
+            const edge: CanvasEdge = {
+                id: `e-${generateId()}`,
+                source: params.source,
+                target: params.target,
+                animated: true,
+                style: { stroke: "var(--accent-primary)", strokeOpacity: 0.8, strokeWidth: 2 },
+            };
+            addConnection(edge);
+        },
+        [addConnection]
+    );
+
+    const onEdgesDelete = useCallback(
+        (deletedEdges: any[]) => {
+            deletedEdges.forEach((edge) => removeConnection(edge.id));
+        },
+        [removeConnection]
     );
 
     const onNodeClick = useCallback(
@@ -119,6 +142,40 @@ export default function TaskCanvas() {
         useTaskStore.getState().addTask("task", { x: e.clientX - bounds.left, y: e.clientY - bounds.top });
     }, []);
 
+    // Handle Keyboard Copy/Paste/Cut
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if typing in an input
+            if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+
+            const isMacCmd = navigator.platform.toUpperCase().indexOf('MAC') >= 0 && e.metaKey;
+            const isCtrl = !navigator.platform.toUpperCase().includes('MAC') && e.ctrlKey;
+            const isModifier = isMacCmd || isCtrl;
+
+            if (isModifier && e.key === "c") {
+                const selectedTask = tasks.find(t => t.id === selectedId);
+                if (selectedTask) {
+                    copyCard(selectedTask, activeCanvasId);
+                    showToast(`Copied: ${selectedTask.title}`, "📋", "#00d4ff");
+                }
+            } else if (isModifier && e.key === "x") {
+                const selectedTask = tasks.find(t => t.id === selectedId);
+                if (selectedTask) {
+                    copyCard(selectedTask, activeCanvasId, true);
+                    showToast(`Cut: ${selectedTask.title}`, "✂️", "#ef4444");
+                }
+            } else if (isModifier && !e.shiftKey && e.key === "v") {
+                if (copiedCard) {
+                    pasteCard(activeCanvasId);
+                    showToast(`Pasted`, "✨", "#10b981");
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedId, tasks, activeCanvasId, copyCard, pasteCard, copiedCard]);
+
     const minimapNodeColor = (node: { data: Task }) => {
         const colors: Record<string, string> = { task: "#00d4ff", checklist: "#a855f7", note: "#10b981" };
         return colors[node.data?.type] ?? "#888";
@@ -132,6 +189,7 @@ export default function TaskCanvas() {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onEdgesDelete={onEdgesDelete}
                 onNodeClick={onNodeClick}
                 onPaneClick={onPaneClick}
                 onNodeDragStop={onNodeDragStop}
@@ -140,6 +198,7 @@ export default function TaskCanvas() {
                 minZoom={0.1}
                 maxZoom={2.5}
                 deleteKeyCode={null}
+                connectionMode={ConnectionMode.Loose}
                 proOptions={{ hideAttribution: true }}
             >
                 <Background
@@ -161,6 +220,9 @@ export default function TaskCanvas() {
                 style={{ color: "var(--text-muted)" }}>
                 Double-click canvas to add task · Drag to move · Scroll to zoom
             </div>
+
+            <CanvasPicker />
+            <CopyToast />
         </div>
     );
 }

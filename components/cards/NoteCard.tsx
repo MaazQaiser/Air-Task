@@ -39,8 +39,25 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                 boxShadow: selected ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined,
             }}
         >
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+            {/* Connection Handles */}
+            <Handle 
+                type="target" 
+                position={Position.Top} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT_GLOW}` }}
+            />
+            <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT_GLOW}` }}
+            />
 
             {/* Accent stripe */}
             <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${ACCENT}cc, transparent)` }} />
@@ -65,7 +82,7 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                         {editingTitle ? (
                             <input
                                 autoFocus
-                                className="w-full bg-transparent outline-none text-[13px] font-semibold border-b pb-0.5"
+                                className="w-full bg-transparent outline-none text-[18px] font-extrabold border-b pb-0.5"
                                 style={{ color: "var(--text-primary)", borderColor: ACCENT }}
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
@@ -74,7 +91,7 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                             />
                         ) : (
                             <h3
-                                className="text-[13px] font-semibold leading-snug cursor-text select-none"
+                                className="text-[18px] font-extrabold leading-snug cursor-text select-none"
                                 style={{ color: "var(--text-primary)" }}
                                 onDoubleClick={() => setEditingTitle(true)}
                             >
@@ -143,7 +160,7 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: "1px solid var(--glass-border)" }}>
                     <span className="text-[9px] font-mono" style={{ color: "var(--text-muted)" }}>
                         {new Date(data.createdAt).toLocaleDateString("en-US", {
                             month: "short",

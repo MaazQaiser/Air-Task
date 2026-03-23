@@ -33,8 +33,25 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
                 boxShadow: selected ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined,
             }}
         >
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+            {/* Connection Handles */}
+            <Handle 
+                type="target" 
+                position={Position.Top} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT_GLOW}` }}
+            />
+            <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT_GLOW}` }}
+            />
 
             {/* Purple stripe */}
             <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${ACCENT}cc, transparent)` }} />
@@ -53,7 +70,7 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
                     {/* Title + count */}
                     <div className="flex-1 min-w-0">
                         <div className="text-[9px] font-mono uppercase tracking-widest mb-0.5" style={{ color: ACCENT }}>Checklist</div>
-                        <h3 className="text-[13px] font-semibold truncate leading-snug" style={{ color: "var(--text-primary)" }}>
+                        <h3 className="text-[18px] font-extrabold truncate leading-snug" style={{ color: "var(--text-primary)" }}>
                             {data.title}
                         </h3>
                     </div>
@@ -195,7 +212,7 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: "1px solid rgba(168,85,247,0.08)" }}>
+                <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: "1px solid var(--glass-border)" }}>
                     <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
                         {done}/{total} done
                     </span>

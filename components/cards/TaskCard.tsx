@@ -58,8 +58,25 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                     : undefined,
             }}
         >
-            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+            {/* Connection Handles */}
+            <Handle 
+                type="target" 
+                position={Position.Top} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: priority.color, boxShadow: `0 0 8px ${priority.glow}` }}
+            />
+            <Handle 
+                type="source" 
+                position={Position.Bottom} 
+                className={cn(
+                    "w-3 h-3 rounded-full border-2 border-white transition-opacity",
+                    selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+                style={{ background: priority.color, boxShadow: `0 0 8px ${priority.glow}` }}
+            />
 
             {/* Priority accent stripe */}
             <div
@@ -76,9 +93,9 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                         onClick={cycleStatus}
                         className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-all hover:scale-110"
                         style={{
-                            borderColor: data.status === "done" ? "#10b981" : "rgba(226,232,240,0.2)",
+                            borderColor: data.status === "done" ? "#10b981" : "var(--glass-border)",
                             background: data.status === "done" ? "rgba(16,185,129,0.15)" : "transparent",
-                            color: data.status === "done" ? "#10b981" : "rgba(226,232,240,0.3)",
+                            color: data.status === "done" ? "#10b981" : "var(--text-muted)",
                         }}
                         title="Cycle status"
                     >
@@ -90,7 +107,7 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                         {editing ? (
                             <input
                                 autoFocus
-                                className="w-full bg-transparent outline-none text-[13px] font-semibold leading-snug border-b pb-0.5"
+                                className="w-full bg-transparent outline-none text-[18px] font-extrabold leading-snug border-b pb-0.5"
                                 style={{
                                     color: "var(--text-primary)",
                                     borderColor: priority.color,
@@ -103,7 +120,7 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                         ) : (
                             <h3
                                 className={cn(
-                                    "text-[13px] font-semibold leading-snug cursor-text select-none",
+                                    "text-[18px] font-extrabold leading-snug cursor-text select-none",
                                     data.status === "done" && "line-through opacity-50"
                                 )}
                                 style={{ color: "var(--text-primary)" }}
@@ -156,7 +173,7 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                 </div>
 
                 {/* Footer row */}
-                <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--glass-border)" }}>
                     {/* Status badge */}
                     <div
                         className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"

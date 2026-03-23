@@ -86,7 +86,7 @@ export default function LoginPage() {
     return (
         <div
             className="min-h-screen w-screen flex items-center justify-center relative overflow-hidden"
-            style={{ background: "#080c14" }}
+            style={{ background: "var(--bg-base)" }}
         >
             {/* ── Background atmosphere ────────────────── */}
             <div className="absolute inset-0 pointer-events-none">
@@ -118,9 +118,23 @@ export default function LoginPage() {
                 <div
                     className="absolute inset-0"
                     style={{
-                        backgroundImage: "radial-gradient(rgba(0,212,255,0.12) 1px, transparent 1px)",
+                        backgroundImage: "radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px)",
                         backgroundSize: "32px 32px",
                         opacity: 0.4,
+                    }}
+                />
+                
+                {/* 1/4th illustration on bottom right */}
+                <motion.img 
+                    initial={{ opacity: 0, y: 30, x: 30 }}
+                    animate={{ opacity: 1, y: 0, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                    src="/assets/illustration.png"
+                    alt="Team Collaboration"
+                    className="absolute bottom-8 right-12 z-0 pointer-events-none"
+                    style={{ 
+                        width: "clamp(250px, 28vw, 550px)", 
+                        objectFit: "contain" 
                     }}
                 />
             </div>
@@ -130,18 +144,15 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 24, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                style={{ width: "100%", maxWidth: 400, padding: "0 16px" }}
+                style={{ width: "100%", maxWidth: 400, padding: "0 16px", zIndex: 10 }}
             >
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.04)",
-                        backdropFilter: "blur(40px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(40px) saturate(180%)",
-                        border: "1px solid rgba(255,255,255,0.09)",
-                        borderRadius: 24,
-                        /* Card padding: 40px top + sides, 32px bottom — generous but intentional */
+                        background: "#ffffff",
+                        border: "3px solid #111827",
+                        borderRadius: 20,
                         padding: "40px 32px 32px",
-                        boxShadow: "0 32px 80px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07)",
+                        boxShadow: "6px 6px 0 #111827",
                         position: "relative",
                         overflow: "hidden",
                     }}
@@ -162,44 +173,33 @@ export default function LoginPage() {
                     <div style={{ textAlign: "center", marginBottom: 32 }}>
                         {/* App icon */}
                         <motion.div
-                            whileHover={{ scale: 1.06, rotate: 4 }}
+                            whileHover={{ scale: 1.06 }}
                             transition={{ type: "spring", damping: 12 }}
                             style={{
                                 width: 56,
                                 height: 56,
-                                borderRadius: 16,
-                                background: "linear-gradient(135deg, rgba(168,85,247,0.35), rgba(0,212,255,0.35))",
-                                border: "1px solid rgba(168,85,247,0.45)",
-                                boxShadow: "0 0 24px rgba(168,85,247,0.3), 0 0 48px rgba(0,212,255,0.12)",
+                                borderRadius: 14,
+                                background: "#ffffff",
+                                border: "3px solid #111827",
+                                boxShadow: "3px 3px 0 #111827",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                margin: "0 auto 16px",
+                                margin: "0 auto 20px",
+                                overflow: "hidden",
+                                padding: 6,
                             }}
                         >
-                            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                                <rect x="3" y="3" width="8" height="8" rx="2.5" fill="url(#lg)" />
-                                <rect x="15" y="3" width="8" height="8" rx="2.5" fill="url(#lg)" opacity="0.65" />
-                                <rect x="3" y="15" width="8" height="8" rx="2.5" fill="url(#lg)" opacity="0.65" />
-                                <rect x="15" y="15" width="8" height="8" rx="2.5" fill="url(#lg)" />
-                                <defs>
-                                    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-                                        <stop stopColor="#a855f7" />
-                                        <stop offset="1" stopColor="#00d4ff" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
+                            <img src="/assets/logo.png" alt="AirTasks Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                         </motion.div>
 
                         {/* H1 — app name */}
                         <h1
                             style={{
                                 fontSize: 28,
-                                fontWeight: 700,
+                                fontWeight: 800,
                                 letterSpacing: "-0.03em",
-                                background: "linear-gradient(135deg, #e2e8f0 30%, rgba(226,232,240,0.5))",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
+                                color: "#111827",
                                 lineHeight: 1.2,
                                 marginBottom: 6,
                             }}
@@ -212,8 +212,8 @@ export default function LoginPage() {
                             style={{
                                 fontSize: 13,
                                 lineHeight: "19px",
-                                color: "rgba(226,232,240,0.38)",
-                                fontWeight: 400,
+                                color: "var(--text-secondary)",
+                                fontWeight: 500,
                             }}
                         >
                             {isLogin ? "Welcome back to your workspace" : "Create your spatial workspace"}
@@ -248,20 +248,20 @@ export default function LoginPage() {
                             marginBottom: 20,
                         }}
                     >
-                        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
                         <span
                             style={{
                                 fontSize: 11,
-                                fontWeight: 500,
+                                fontWeight: 600,
                                 letterSpacing: "0.08em",
-                                color: "rgba(226,232,240,0.25)",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 fontFamily: "'JetBrains Mono', monospace",
                             }}
                         >
                             or
                         </span>
-                        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.05)" }} />
                     </div>
 
                     {/* ── Email / Password form ── */}
@@ -317,7 +317,7 @@ export default function LoginPage() {
                                         background: "none",
                                         border: "none",
                                         cursor: "pointer",
-                                        color: "rgba(226,232,240,0.35)",
+                                        color: "var(--text-muted)",
                                         borderRadius: 8,
                                         transition: "color 0.15s ease, background 0.15s ease",
                                     }}
@@ -380,7 +380,8 @@ export default function LoginPage() {
                             marginTop: 20,
                             textAlign: "center",
                             fontSize: 13,
-                            color: "rgba(226,232,240,0.32)",
+                            color: "var(--text-secondary)",
+                            fontWeight: 500,
                         }}
                     >
                         {isLogin ? "New to AirTasks?" : "Already have an account?"}{" "}

@@ -4,14 +4,14 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useTaskStore } from "@/stores/taskStore";
-import { subscribeToCards } from "@/lib/firestoreService";
+import { subscribeToCards, subscribeToEdges } from "@/lib/firestoreService";
 import { subscribeToCanvases, createCanvas } from "@/lib/canvasService";
 import { Canvas } from "@/types/canvas";
 
 export default function FirestoreSync() {
     const { user } = useAuthStore();
     const { activeCanvasId, setCanvases } = useCanvasStore();
-    const { setTasks } = useTaskStore();
+    const { setTasks, setEdges } = useTaskStore();
 
     // ── 1. Subscribe to user's canvases ──────────────────────
     useEffect(() => {
@@ -39,7 +39,6 @@ export default function FirestoreSync() {
         return () => unsubscribe();
     }, [user, setCanvases]);
 
-    // ── 2. Subscribe to cards of active canvas ───────────────
     useEffect(() => {
         if (!user || !activeCanvasId) return;
 
@@ -47,8 +46,15 @@ export default function FirestoreSync() {
             setTasks(cards);
         });
 
-        return () => unsubscribe();
-    }, [user, activeCanvasId, setTasks]);
+        const unsubscribeEdges = subscribeToEdges(user.uid, activeCanvasId, (edges) => {
+            setEdges(edges);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribeEdges();
+        };
+    }, [user, activeCanvasId, setTasks, setEdges]);
 
     // ── 3. Optional: migrate local storage (first login only)
     useEffect(() => {

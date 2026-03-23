@@ -24,4 +24,12 @@ export interface Task {
     createdAt: string;
 }
 
+export interface CanvasEdge {
+    id: string;
+    source: string;
+    target: string;
+    animated?: boolean;
+    style?: React.CSSProperties;
+}
+
 export type PartialTask = Partial<Task> & { id: string };

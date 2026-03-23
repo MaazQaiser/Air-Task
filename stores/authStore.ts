@@ -1,8 +1,8 @@
 "use client";
 import { create } from "zustand";
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { User, onAuthStateChanged, signOut as firebaseSignOut, updateProfile as firebaseUpdateProfile } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 interface AuthState {
   user: User | null;
@@ -10,6 +10,7 @@ interface AuthState {
   loading: boolean;
   init: () => void;
   signOut: () => Promise<void>;
+  updateUserProfile: (displayName: string, photoURL: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -59,5 +60,28 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await firebaseSignOut(auth);
     set({ user: null, role: null });
+  },
+
+  updateUserProfile: async (displayName: string, photoURL: string) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    
+    // Update Firebase Auth profile
+    await firebaseUpdateProfile(currentUser, { displayName, photoURL });
+    
+    // Update Firestore user document
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, { 
+        displayName, 
+        photoURL, 
+        updatedAt: new Date().toISOString() 
+      });
+    } catch (err) {
+      console.warn("Failed to update firestore user data:", err);
+    }
+    
+    // Force a new object reference so Zustand triggers a re-render
+    set({ user: Object.assign(Object.create(Object.getPrototypeOf(currentUser)), currentUser) });
   },
 }));

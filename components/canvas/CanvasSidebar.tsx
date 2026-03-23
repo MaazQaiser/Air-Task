@@ -17,7 +17,10 @@ export default function CanvasSidebar() {
         addCanvas,
         renameCanvas,
         removeCanvas,
+        theme,
     } = useCanvasStore();
+
+    const isDark = theme === "dark";
 
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState("");
@@ -56,7 +59,7 @@ export default function CanvasSidebar() {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="fixed inset-0 z-[60]"
-                        style={{ background: "rgba(0,0,0,0.4)" }}
+                        style={{ background: isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.3)" }}
                         onClick={toggleSidebar}
                     />
 
@@ -69,10 +72,10 @@ export default function CanvasSidebar() {
                         className="fixed left-0 top-0 bottom-0 z-[65] flex flex-col"
                         style={{
                             width: 300,
-                            background: "rgba(12,16,24,0.95)",
+                            background: isDark ? "rgba(12,16,24,0.95)" : "rgba(255,255,255,0.95)",
                             backdropFilter: "blur(40px) saturate(180%)",
-                            borderRight: "1px solid rgba(255,255,255,0.07)",
-                            boxShadow: "8px 0 40px rgba(0,0,0,0.5)",
+                            borderRight: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid rgba(0,0,0,0.07)",
+                            boxShadow: isDark ? "8px 0 40px rgba(0,0,0,0.5)" : "8px 0 40px rgba(0,0,0,0.1)",
                         }}
                     >
                         {/* Header */}
@@ -116,7 +119,7 @@ export default function CanvasSidebar() {
                         </div>
 
                         {/* Divider */}
-                        <div style={{ height: 1, margin: "0 20px", background: "rgba(255,255,255,0.06)" }} />
+                        <div style={{ height: 1, margin: "0 20px", background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }} />
 
                         {/* Canvas list */}
                         <div
@@ -146,7 +149,7 @@ export default function CanvasSidebar() {
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!isActive)
-                                                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                                                e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
                                         }}
                                         onMouseLeave={(e) => {
                                             if (!isActive)
@@ -292,7 +295,7 @@ export default function CanvasSidebar() {
                         </div>
 
                         {/* Footer — New canvas button */}
-                        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ padding: "12px 16px", borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)" }}>
                             <button
                                 onClick={() => setCreating(true)}
                                 className="btn btn-secondary"
