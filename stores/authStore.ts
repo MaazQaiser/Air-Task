@@ -22,28 +22,31 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (currentUser) {
         set({ user: currentUser, loading: true });
 
-        // Ensure user document exists in Firestore and fetch role
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
-
         let currentUserRole: "admin" | "user" = "user";
-        
-        if (!userSnap.exists()) {
-          // If first user, make them admin? Hard to say, we default to user, or make it dynamic.
-          // For now, if no users exist, we could check, but let's simply create them with defaults.
-          const isFirstAdminOverride = currentUser.email === "admin@example.com"; // Adjust logic as needed
-          currentUserRole = isFirstAdminOverride ? "admin" : "user";
-          
-          await setDoc(userRef, {
-            displayName: currentUser.displayName,
-            email: currentUser.email,
-            photoURL: currentUser.photoURL,
-            role: currentUserRole,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-        } else {
-          currentUserRole = userSnap.data().role || "user";
+
+        try {
+          // Ensure user document exists in Firestore and fetch role
+          const userRef = doc(db, "users", currentUser.uid);
+          const userSnap = await getDoc(userRef);
+
+          if (!userSnap.exists()) {
+            const isFirstAdminOverride = currentUser.email === "admin@example.com";
+            currentUserRole = isFirstAdminOverride ? "admin" : "user";
+
+            await setDoc(userRef, {
+              displayName: currentUser.displayName,
+              email: currentUser.email,
+              photoURL: currentUser.photoURL,
+              role: currentUserRole,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          } else {
+            currentUserRole = userSnap.data().role || "user";
+          }
+        } catch (err) {
+          // Firestore may be offline — continue with default role
+          console.warn("Firestore role fetch failed (offline?), using default role:", err);
         }
 
         set({ role: currentUserRole, loading: false });
