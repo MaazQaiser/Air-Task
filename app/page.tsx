@@ -5,6 +5,8 @@ import Toolbar from "@/components/ui/Toolbar";
 import TaskDock from "@/components/dock/TaskDock";
 import FirestoreSync from "@/components/canvas/FirestoreSync";
 import CanvasSidebar from "@/components/canvas/CanvasSidebar";
+import OnboardingGuide from "@/components/onboarding/OnboardingGuide";
+import WelcomeNote from "@/components/onboarding/WelcomeNote";
 
 const TaskCanvas = dynamic(() => import("@/components/canvas/TaskCanvas"), { ssr: false });
 
@@ -27,6 +29,7 @@ export default function HomePage() {
 
         <FirestoreSync />
         <CanvasSidebar />
+        <WelcomeNote />
 
         {/* Top toolbar — has access to useReactFlow() via the provider above */}
         <Toolbar />
@@ -38,6 +41,9 @@ export default function HomePage() {
 
         {/* Task dock */}
         <TaskDock />
+
+        {/* Onboarding guide — shows only for first-time users */}
+        <OnboardingGuide />
       </main>
     </ReactFlowProvider>
   );

@@ -15,7 +15,7 @@ const VoiceHUD = dynamic(() => import("@/components/voice/VoiceHUD"), { ssr: fal
 const GestureOverlay = dynamic(() => import("@/components/gesture/GestureOverlay"), { ssr: false });
 
 /* ─────────────────────────────────────────────────────────────
-   Design tokens — inspired by deep navy glassmorphic cards
+   Design tokens — deep navy glassmorphic panels
    ───────────────────────────────────────────────────────────── */
 const panelBase: React.CSSProperties = {
     background: "linear-gradient(145deg, rgba(10,16,30,0.92), rgba(6,10,22,0.96))",
@@ -37,7 +37,6 @@ export default function Toolbar() {
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
 
-    // Close profile dropdown on outside click
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
@@ -56,6 +55,15 @@ export default function Toolbar() {
         const x = 200 + Math.random() * 500;
         const y = 150 + Math.random() * 300;
         addTask(type, { x, y });
+    };
+
+    const handleAddSticker = (emoji: string, variant?: string) => {
+        const x = 200 + Math.random() * 500;
+        const y = 150 + Math.random() * 300;
+        const id = addTask("sticker", { x, y }, emoji);
+        if (variant) {
+            useTaskStore.getState().updateTask(id, { description: variant });
+        }
     };
 
     const handleSignOut = async () => {
@@ -77,30 +85,30 @@ export default function Toolbar() {
                 style={{
                     top: 16,
                     left: 16,
-                    padding: "14px 22px",
-                    gap: 18,
+                    padding: "12px 20px",
+                    gap: 14,
                     ...panelBase,
                 }}
             >
-                {/* Logo mark */}
-                <div className="flex items-center" style={{ gap: 12 }}>
+                {/* Logo */}
+                <div className="flex items-center" style={{ gap: 10 }}>
                     <div
                         className="flex items-center justify-center"
                         style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 12,
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
                             background: "linear-gradient(135deg, rgba(99,102,241,0.35), rgba(0,180,255,0.25))",
                             border: "1px solid rgba(99,102,241,0.2)",
-                            boxShadow: "0 0 20px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
+                            boxShadow: "0 0 20px rgba(99,102,241,0.15)",
                         }}
                     >
-                        <LayoutGrid size={17} fill="currentColor" color="#a5b4fc" />
+                        <LayoutGrid size={15} fill="currentColor" color="#a5b4fc" />
                     </div>
                     <span
                         className="font-bold"
                         style={{
-                            fontSize: 16,
+                            fontSize: 15,
                             letterSpacing: "-0.03em",
                             background: "linear-gradient(135deg, #c4b5fd, #67e8f9)",
                             WebkitBackgroundClip: "text",
@@ -111,7 +119,6 @@ export default function Toolbar() {
                     </span>
                 </div>
 
-                {/* Divider */}
                 <Divider />
 
                 {/* Canvas Switcher */}
@@ -119,10 +126,10 @@ export default function Toolbar() {
                     onClick={() => useCanvasStore.getState().toggleSidebar()}
                     className="flex items-center"
                     style={{
-                        gap: 8,
-                        padding: "10px 16px",
-                        borderRadius: 12,
-                        fontSize: 14,
+                        gap: 7,
+                        padding: "8px 14px",
+                        borderRadius: 10,
+                        fontSize: 13,
                         fontWeight: 500,
                         color: "rgba(203,213,225,0.85)",
                         background: "transparent",
@@ -132,22 +139,28 @@ export default function Toolbar() {
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.background = "rgba(0,180,255,0.06)";
-                        e.currentTarget.style.color = "#e2e8f0";
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "rgba(203,213,225,0.85)";
                     }}
                 >
-                    <FolderOpen size={15} style={{ color: "#38bdf8", opacity: 0.7, flexShrink: 0 }} />
+                    <FolderOpen size={14} style={{ color: "#38bdf8", opacity: 0.7, flexShrink: 0 }} />
                     <span style={{ whiteSpace: "nowrap" }}>
                         {canvases.find((c) => c.id === activeCanvasId)?.name ?? "My Workspace"}
                     </span>
-                    <ChevronDown size={12} style={{ opacity: 0.3, flexShrink: 0 }} />
+                    <ChevronDown size={11} style={{ opacity: 0.3, flexShrink: 0 }} />
                 </button>
+
+                <Divider />
+
+                {/* Stats */}
+                <div className="flex items-center" style={{ gap: 12 }}>
+                    <StatBadge value={activeCount} label="active" color="#22d3ee" />
+                    <StatBadge value={doneCount} label="done" color="#34d399" />
+                </div>
             </motion.div>
 
-            {/* ─── CENTER PANEL ───────────────────────────── */}
+            {/* ─── CENTER PANEL (compact — just add buttons) ── */}
             <motion.div
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -157,13 +170,13 @@ export default function Toolbar() {
                     top: 16,
                     left: "50%",
                     transform: "translateX(-50%)",
-                    padding: "14px 24px",
-                    gap: 18,
+                    padding: "12px 20px",
+                    gap: 14,
                     ...panelBase,
                 }}
             >
-                {/* Add buttons */}
-                <div className="flex items-center" style={{ gap: 8 }}>
+                {/* Card add buttons */}
+                <div className="flex items-center" style={{ gap: 6 }}>
                     <AddCardBtn label="Task" color="#22d3ee" onClick={() => handleAddCard("task")} />
                     <AddCardBtn label="Note" color="#34d399" onClick={() => handleAddCard("note")} />
                     <AddCardBtn label="List" color="#a78bfa" onClick={() => handleAddCard("checklist")} />
@@ -171,45 +184,22 @@ export default function Toolbar() {
 
                 <Divider />
 
-                {/* Voice & Gesture */}
-                <div className="flex items-center" style={{ gap: 6 }}>
+                {/* Stickers */}
+                <div className="flex items-center" style={{ gap: 4 }}>
+                    <StickerBtn emoji="⭐" label="Sticker" onClick={() => handleAddSticker("⭐")} />
+                    <StickerBtn emoji="🧑‍💻" label="Avatar" onClick={() => handleAddSticker("🧑‍💻", "avatar")} />
+                </div>
+
+                <Divider />
+
+                {/* Voice & Gesture — icon-only in center */}
+                <div className="flex items-center" style={{ gap: 4 }}>
                     <VoiceHUD />
                     <GestureOverlay />
                 </div>
-
-                <Divider />
-
-                {/* Stats */}
-                <div className="flex items-center" style={{ gap: 16 }}>
-                    <StatBadge value={activeCount} label="active" color="#22d3ee" />
-                    <StatBadge value={doneCount} label="done" color="#34d399" />
-                </div>
-
-                <Divider />
-
-                {/* Theme toggle */}
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={toggleTheme}
-                    className="flex items-center justify-center"
-                    style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 11,
-                        background: "rgba(0,180,255,0.05)",
-                        border: "1px solid rgba(0,180,255,0.1)",
-                        color: theme === "dark" ? "#fbbf24" : "#818cf8",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                    }}
-                    title={theme === "dark" ? "Light Mode" : "Dark Mode"}
-                >
-                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                </motion.button>
             </motion.div>
 
-            {/* ─── RIGHT PANEL ────────────────────────────── */}
+            {/* ─── RIGHT PANEL ─────────────────────────────── */}
             <motion.div
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -218,18 +208,41 @@ export default function Toolbar() {
                 style={{
                     top: 16,
                     right: 16,
-                    padding: "14px 22px",
-                    gap: 16,
+                    padding: "12px 18px",
+                    gap: 12,
                     ...panelBase,
                 }}
             >
-                {/* Share Button */}
+                {/* Theme toggle */}
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={toggleTheme}
+                    className="flex items-center justify-center"
+                    style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        background: "rgba(0,180,255,0.05)",
+                        border: "1px solid rgba(0,180,255,0.1)",
+                        color: theme === "dark" ? "#fbbf24" : "#818cf8",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                    }}
+                    title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                >
+                    {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+                </motion.button>
+
+                <Divider />
+
+                {/* Share */}
                 <button
                     className="flex items-center"
                     style={{
-                        gap: 7,
-                        padding: "10px 18px",
-                        borderRadius: 12,
+                        gap: 6,
+                        padding: "8px 16px",
+                        borderRadius: 10,
                         fontSize: 13,
                         fontWeight: 600,
                         background: "rgba(56,189,248,0.06)",
@@ -247,7 +260,7 @@ export default function Toolbar() {
                         e.currentTarget.style.boxShadow = "none";
                     }}
                 >
-                    <Share2 size={14} />
+                    <Share2 size={13} />
                     Share
                 </button>
 
@@ -259,10 +272,10 @@ export default function Toolbar() {
                         onClick={() => setProfileOpen(!profileOpen)}
                         className="flex items-center"
                         style={{
-                            gap: 10,
-                            padding: "6px 12px 6px 6px",
-                            borderRadius: 14,
-                            fontSize: 14,
+                            gap: 8,
+                            padding: "5px 10px 5px 5px",
+                            borderRadius: 12,
+                            fontSize: 13,
                             fontWeight: 500,
                             color: "rgba(203,213,225,0.85)",
                             background: "transparent",
@@ -282,33 +295,31 @@ export default function Toolbar() {
                                 src={user.photoURL}
                                 alt=""
                                 style={{
-                                    width: 32,
-                                    height: 32,
+                                    width: 28,
+                                    height: 28,
                                     borderRadius: "50%",
                                     objectFit: "cover",
                                     border: "2px solid rgba(56,189,248,0.2)",
-                                    boxShadow: "0 0 10px rgba(56,189,248,0.1)",
                                 }}
                             />
                         ) : (
                             <div
                                 className="flex items-center justify-center"
                                 style={{
-                                    width: 32,
-                                    height: 32,
+                                    width: 28,
+                                    height: 28,
                                     borderRadius: "50%",
                                     background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(56,189,248,0.2))",
                                     border: "2px solid rgba(56,189,248,0.15)",
-                                    boxShadow: "0 0 10px rgba(56,189,248,0.08)",
                                     flexShrink: 0,
                                     color: "#a5b4fc",
                                 }}
                             >
-                                <User size={14} />
+                                <User size={12} />
                             </div>
                         )}
                         <span style={{
-                            maxWidth: 90,
+                            maxWidth: 80,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -316,7 +327,7 @@ export default function Toolbar() {
                             {user?.displayName || user?.email?.split("@")[0] || "Profile"}
                         </span>
                         <ChevronDown
-                            size={12}
+                            size={11}
                             style={{
                                 opacity: 0.3,
                                 flexShrink: 0,
@@ -336,9 +347,9 @@ export default function Toolbar() {
                                 className="absolute right-0 top-full"
                                 style={{
                                     marginTop: 10,
-                                    width: 210,
-                                    borderRadius: 16,
-                                    padding: 6,
+                                    width: 200,
+                                    borderRadius: 14,
+                                    padding: 5,
                                     background: "linear-gradient(145deg, rgba(10,16,30,0.97), rgba(6,10,22,0.98))",
                                     backdropFilter: "blur(40px)",
                                     border: "1px solid rgba(0,180,255,0.08)",
@@ -346,12 +357,12 @@ export default function Toolbar() {
                                 }}
                             >
                                 <DropdownItem
-                                    icon={<Settings size={14} />}
+                                    icon={<Settings size={13} />}
                                     label="Profile Settings"
                                     onClick={() => setProfileOpen(false)}
                                 />
                                 <DropdownItem
-                                    icon={<LogOut size={14} />}
+                                    icon={<LogOut size={13} />}
                                     label="Log Out"
                                     onClick={handleSignOut}
                                     destructive
@@ -365,16 +376,14 @@ export default function Toolbar() {
     );
 }
 
-/* ──────────────────────────────────────────────────────────────
-   Sub-components
-   ────────────────────────────────────────────────────────────── */
+/* ──────────── Sub-components ──────────── */
 
 function Divider() {
     return (
         <div
             style={{
                 width: 1,
-                height: 26,
+                height: 22,
                 background: "linear-gradient(180deg, transparent 0%, rgba(0,180,255,0.12) 50%, transparent 100%)",
                 flexShrink: 0,
             }}
@@ -384,10 +393,10 @@ function Divider() {
 
 function StatBadge({ value, label, color }: { value: number; label: string; color: string }) {
     return (
-        <div className="flex items-baseline" style={{ gap: 5 }}>
+        <div className="flex items-baseline" style={{ gap: 4 }}>
             <span
                 style={{
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 700,
                     fontFamily: "'SF Mono', 'Fira Code', monospace",
                     color,
@@ -398,7 +407,7 @@ function StatBadge({ value, label, color }: { value: number; label: string; colo
             </span>
             <span
                 style={{
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: 500,
                     color: "rgba(148,163,184,0.5)",
                     textTransform: "uppercase",
@@ -428,10 +437,10 @@ function AddCardBtn({
             title={`Add ${label}`}
             className="flex items-center"
             style={{
-                gap: 5,
-                padding: "10px 16px",
-                borderRadius: 12,
-                fontSize: 13,
+                gap: 4,
+                padding: "8px 14px",
+                borderRadius: 10,
+                fontSize: 12,
                 fontWeight: 600,
                 letterSpacing: "-0.01em",
                 background: `linear-gradient(145deg, ${color}0D, ${color}06)`,
@@ -442,7 +451,7 @@ function AddCardBtn({
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.background = `linear-gradient(145deg, ${color}1A, ${color}0D)`;
-                e.currentTarget.style.boxShadow = `0 0 20px ${color}18, inset 0 0 30px ${color}06`;
+                e.currentTarget.style.boxShadow = `0 0 20px ${color}18`;
                 e.currentTarget.style.borderColor = `${color}28`;
             }}
             onMouseLeave={(e) => {
@@ -451,8 +460,48 @@ function AddCardBtn({
                 e.currentTarget.style.borderColor = `${color}18`;
             }}
         >
-            <Plus size={13} strokeWidth={2.5} />
+            <Plus size={12} strokeWidth={2.5} />
             {label}
+        </motion.button>
+    );
+}
+
+function StickerBtn({
+    emoji,
+    label,
+    onClick,
+}: {
+    emoji: string;
+    label: string;
+    onClick: () => void;
+}) {
+    return (
+        <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={onClick}
+            title={`Add ${label}`}
+            className="flex items-center justify-center"
+            style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                fontSize: 16,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                e.currentTarget.style.boxShadow = "0 0 12px rgba(245,158,11,0.15)";
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                e.currentTarget.style.boxShadow = "none";
+            }}
+        >
+            {emoji}
         </motion.button>
     );
 }
@@ -473,9 +522,9 @@ function DropdownItem({
             onClick={onClick}
             className="flex items-center w-full text-left"
             style={{
-                gap: 10,
-                padding: "11px 14px",
-                borderRadius: 10,
+                gap: 8,
+                padding: "10px 12px",
+                borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 500,
                 color: destructive ? "rgba(248,113,113,0.8)" : "rgba(203,213,225,0.6)",

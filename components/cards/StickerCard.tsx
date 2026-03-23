@@ -1,0 +1,152 @@
+"use client";
+import { memo, useState } from "react";
+import { NodeProps, Handle, Position } from "reactflow";
+import { motion } from "framer-motion";
+import { Trash2 } from "lucide-react";
+import { Task } from "@/types/task";
+import { useTaskStore } from "@/stores/taskStore";
+import { cn } from "@/lib/utils";
+
+/* Sticker emojis palette */
+const STICKER_EMOJIS = [
+    "👋", "🎉", "🚀", "💡", "🔥", "⭐", "❤️", "👍",
+    "🎯", "✅", "📌", "🏆", "💪", "🤔", "😊", "🙌",
+    "🎨", "📝", "⚡", "🌟", "🎵", "📸", "🛠️", "🧩",
+];
+
+/* Avatar stickers */
+const AVATAR_EMOJIS = [
+    "🧑‍💻", "👩‍💻", "🧑‍🎨", "👩‍🚀", "🧑‍🔬", "👩‍💼", "🧑‍🏫", "👩‍🔧",
+    "🧑‍🍳", "👩‍⚕️", "🧑‍🚒", "👩‍🌾", "🦸‍♂️", "🦸‍♀️", "🧙‍♂️", "🧙‍♀️",
+];
+
+function StickerCard({ data, selected }: NodeProps<Task>) {
+    const { updateTask, deleteTask } = useTaskStore();
+    const [picking, setPicking] = useState(false);
+
+    const isAvatar = data.description === "avatar";
+    const emoji = data.title || "⭐";
+
+    const handlePick = (newEmoji: string) => {
+        updateTask(data.id, { title: newEmoji });
+        setPicking(false);
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.5, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", damping: 18, stiffness: 350 }}
+            className={cn("group relative cursor-default", selected && "z-10")}
+        >
+            <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+            <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+
+            {/* Main sticker */}
+            <div
+                className="flex items-center justify-center select-none"
+                style={{
+                    width: isAvatar ? 72 : 64,
+                    height: isAvatar ? 72 : 64,
+                    fontSize: isAvatar ? 42 : 38,
+                    borderRadius: isAvatar ? "50%" : 16,
+                    background: selected
+                        ? "rgba(0,180,255,0.1)"
+                        : "rgba(255,255,255,0.03)",
+                    border: selected
+                        ? "2px solid rgba(0,180,255,0.3)"
+                        : "1px solid rgba(255,255,255,0.06)",
+                    boxShadow: selected
+                        ? "0 0 20px rgba(0,180,255,0.15)"
+                        : "0 2px 8px rgba(0,0,0,0.3)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                }}
+                onDoubleClick={() => setPicking(!picking)}
+            >
+                {emoji}
+            </div>
+
+            {/* Delete on hover */}
+            <div
+                className={cn(
+                    "absolute -top-2 -right-2 transition-all duration-200",
+                    selected ? "opacity-100 scale-100" : "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100"
+                )}
+            >
+                <button
+                    onClick={() => deleteTask(data.id)}
+                    className="flex items-center justify-center transition-colors"
+                    style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        background: "rgba(239,68,68,0.15)",
+                        border: "1px solid rgba(239,68,68,0.3)",
+                        color: "#ef4444",
+                        cursor: "pointer",
+                        fontSize: 0,
+                    }}
+                >
+                    <Trash2 size={10} />
+                </button>
+            </div>
+
+            {/* Emoji picker dropdown */}
+            {picking && (
+                <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50"
+                    style={{
+                        width: 236,
+                        padding: 10,
+                        borderRadius: 16,
+                        background: "rgba(12,18,34,0.97)",
+                        border: "1px solid rgba(0,180,255,0.08)",
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+                    }}
+                >
+                    <div
+                        className="text-[10px] font-mono uppercase tracking-widest mb-2 px-1"
+                        style={{ color: "rgba(148,163,184,0.4)" }}
+                    >
+                        {isAvatar ? "Avatars" : "Stickers"}
+                    </div>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(8, 1fr)",
+                            gap: 2,
+                        }}
+                    >
+                        {(isAvatar ? AVATAR_EMOJIS : STICKER_EMOJIS).map((e) => (
+                            <button
+                                key={e}
+                                onClick={() => handlePick(e)}
+                                className="flex items-center justify-center transition-all"
+                                style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 6,
+                                    fontSize: 16,
+                                    background: emoji === e ? "rgba(0,180,255,0.1)" : "transparent",
+                                    border: "none",
+                                    cursor: "pointer",
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = emoji === (e.currentTarget.textContent ?? "") ? "rgba(0,180,255,0.1)" : "transparent";
+                                }}
+                            >
+                                {e}
+                            </button>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+        </motion.div>
+    );
+}
+
+export default memo(StickerCard);

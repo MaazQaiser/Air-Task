@@ -68,7 +68,7 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
             />
 
             {/* Main content */}
-            <div className="p-4">
+            <div style={{ padding: 32 }}>
                 {/* Top row: title + actions */}
                 <div className="flex items-start gap-2">
                     {/* Status toggle circle */}

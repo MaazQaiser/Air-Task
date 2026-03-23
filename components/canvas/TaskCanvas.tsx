@@ -9,6 +9,7 @@ import ReactFlow, {
     useEdgesState,
     addEdge,
     Connection,
+    ReactFlowInstance,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { useCallback, useEffect, useRef } from "react";
@@ -17,6 +18,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import TaskCard from "@/components/cards/TaskCard";
 import ChecklistCard from "@/components/cards/ChecklistCard";
 import NoteCard from "@/components/cards/NoteCard";
+import StickerCard from "@/components/cards/StickerCard";
 import { Task } from "@/types/task";
 import { gestureBridge } from "@/lib/gestureBridge";
 
@@ -24,6 +26,7 @@ const nodeTypes: NodeTypes = {
     task: TaskCard,
     checklist: ChecklistCard,
     note: NoteCard,
+    sticker: StickerCard,
 };
 
 export default function TaskCanvas() {
@@ -32,8 +35,11 @@ export default function TaskCanvas() {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    // Flag: is gesture drag active? If yes, skip the Zustand→nodes sync
-    // (gesture bridge is updating nodes directly to avoid jitter)
+    // Fit viewport only once on initial data load
+    const rfInstance = useRef<ReactFlowInstance | null>(null);
+    const initialFitDone = useRef(false);
+
+    // Flag: is gesture drag active?
     const gestureDragging = useRef(false);
 
     // Register gesture bridge — direct setNodes handler (no Zustand roundtrip during drag)
@@ -52,22 +58,34 @@ export default function TaskCanvas() {
     // Sync Zustand → React Flow nodes — skip during active gesture drag
     useEffect(() => {
         if (gestureDragging.current) {
-            // Drag ended (Zustand position was updated) — clear flag and sync
             gestureDragging.current = false;
         }
-        setNodes(
-            tasks
-                .filter((t) => !t.docked)
-                .map((t) => ({
-                    id: t.id,
-                    type: t.type,
-                    position: t.position,
-                    data: { ...t },
-                    draggable: !t.pinned,
-                    selected: t.id === selectedId,
-                }))
-        );
+        const mappedNodes = tasks
+            .filter((t) => !t.docked)
+            .map((t) => ({
+                id: t.id,
+                type: t.type,
+                position: t.position,
+                data: { ...t },
+                draggable: !t.pinned,
+                selected: t.id === selectedId,
+            }));
+        setNodes(mappedNodes);
+
+        // Fit viewport once after initial data arrives
+        if (!initialFitDone.current && mappedNodes.length > 0 && rfInstance.current) {
+            initialFitDone.current = true;
+            setTimeout(() => {
+                rfInstance.current?.fitView({ padding: 0.3, maxZoom: 1 });
+            }, 100);
+        }
     }, [tasks, selectedId, setNodes]);
+
+    const onInit = useCallback((instance: ReactFlowInstance) => {
+        rfInstance.current = instance;
+        // Fit immediately if nodes already exist
+        setTimeout(() => instance.fitView({ padding: 0.3, maxZoom: 1 }), 200);
+    }, []);
 
     const onConnect = useCallback(
         (params: Connection) =>
@@ -118,8 +136,7 @@ export default function TaskCanvas() {
                 onPaneClick={onPaneClick}
                 onNodeDragStop={onNodeDragStop}
                 nodeTypes={nodeTypes}
-                fitView
-                fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
+                onInit={onInit}
                 minZoom={0.1}
                 maxZoom={2.5}
                 deleteKeyCode={null}

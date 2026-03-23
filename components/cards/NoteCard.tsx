@@ -46,7 +46,7 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
             <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${ACCENT}cc, transparent)` }} />
 
             {/* Content */}
-            <div className="p-4">
+            <div style={{ padding: 32 }}>
                 {/* Header row */}
                 <div className="flex items-start gap-2 mb-3">
                     {/* Note icon */}

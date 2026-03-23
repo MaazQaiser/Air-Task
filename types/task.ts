@@ -1,4 +1,4 @@
-export type CardType = "task" | "checklist" | "note";
+export type CardType = "task" | "checklist" | "note" | "sticker";
 export type Priority = "low" | "medium" | "high" | "critical";
 export type Status = "todo" | "inprogress" | "done";
 

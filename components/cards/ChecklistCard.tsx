@@ -39,7 +39,7 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
             {/* Purple stripe */}
             <div className="h-[2px]" style={{ background: `linear-gradient(90deg, ${ACCENT}cc, transparent)` }} />
 
-            <div className="p-4">
+            <div style={{ padding: 32 }}>
                 {/* Header */}
                 <div className="flex items-center gap-2 mb-3">
                     {/* Icon */}

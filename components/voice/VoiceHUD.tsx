@@ -3,35 +3,60 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, X } from "lucide-react";
 import { useTaskStore } from "@/stores/taskStore";
+import { useCanvasStore } from "@/stores/canvasStore";
 import { cn } from "@/lib/utils";
 
 function stripFiller(s: string) {
     return s.replace(/^(and|then|to|called|named|titled|a|an|the|for|about)\s+/i, "").replace(/^[,:\-–—]\s*/, "").trim();
 }
 
-function parseVoiceCommand(transcript: string): { type: "task" | "checklist" | "note"; title: string } | null {
+type VoiceResult =
+    | { kind: "card"; type: "task" | "checklist" | "note"; title: string }
+    | { kind: "canvas"; action: "create"; name: string }
+    | { kind: "canvas"; action: "share" }
+    | { kind: "canvas"; action: "open" };
+
+function parseVoiceCommand(transcript: string): VoiceResult | null {
     const t = transcript.trim();
 
-    // ── TASK ─────────────────────────────────────────────────────────────────
+    // ── CANVAS: share ──────────────────────────────────────────────
+    if (/^(share|export)\s+(this\s+)?(canvas|workspace|board)/i.test(t)) {
+        return { kind: "canvas", action: "share" };
+    }
+
+    // ── CANVAS: create new canvas ──────────────────────────────────
+    const canvasM = t.match(
+        /^(?:create|make|add|new|start)\s+(?:a\s+)?(?:new\s+)?(?:canvas|workspace|board)[:\s,\-–]*(.*)/i
+    );
+    if (canvasM) {
+        return { kind: "canvas", action: "create", name: stripFiller(canvasM[1] || "") || "New Canvas" };
+    }
+
+    // ── CANVAS: open workspace sidebar ─────────────────────────────
+    if (/^(open|show|toggle)\s+(the\s+)?(workspace|sidebar|canvas\s*list|canvases)/i.test(t)) {
+        return { kind: "canvas", action: "open" };
+    }
+
+    // ── CARD: task ──────────────────────────────────────────────────
     const taskM = t.match(/^(?:add|create|make|new|start)\s+(?:a\s+|an\s+|the\s+|me\s+a\s+)?task[s]?[:\s,\-–]*(.*)/i)
         || t.match(/^task[:\s,\-–]+(.*)/i);
-    if (taskM?.[1]?.trim()) return { type: "task", title: stripFiller(taskM[1]) };
+    if (taskM?.[1]?.trim()) return { kind: "card", type: "task", title: stripFiller(taskM[1]) };
 
-    // ── NOTE ─────────────────────────────────────────────────────────────────
+    // ── CARD: note ──────────────────────────────────────────────────
     const noteM = t.match(/^(?:add|create|make|new|write|take)\s+(?:a\s+|an\s+|the\s+)?note[s]?[:\s,\-–]*(.*)/i)
         || t.match(/^note[:\s,\-–]+(.*)/i);
-    if (noteM?.[1]?.trim()) return { type: "note", title: stripFiller(noteM[1]) };
+    if (noteM?.[1]?.trim()) return { kind: "card", type: "note", title: stripFiller(noteM[1]) };
 
-    // ── CHECKLIST ─────────────────────────────────────────────────────────────
+    // ── CARD: checklist ─────────────────────────────────────────────
     const listM = t.match(/^(?:add|create|make|new)\s+(?:a\s+|an\s+|the\s+)?(?:checklist|list|todo|to-do)[:\s,\-–]*(.*)/i)
         || t.match(/^(?:checklist|list)[:\s,\-–]+(.*)/i);
-    if (listM?.[1]?.trim()) return { type: "checklist", title: stripFiller(listM[1]) };
+    if (listM?.[1]?.trim()) return { kind: "card", type: "checklist", title: stripFiller(listM[1]) };
 
-    // ── FALLBACK: treat any 2-10 word phrase as a task title ─────────────────
+    // ── FALLBACK: 2-10 word phrase → task ───────────────────────────
     const words = t.trim().split(/\s+/);
     const ignoreWords = /^(um|uh|hmm|okay|ok|hey|hi|hello|yes|no|testing|test|stop|cancel)$/i;
     if (words.length >= 2 && words.length <= 10 && !ignoreWords.test(words[0])) {
-        return { type: "task", title: stripFiller(t) };
+        return { kind: "card", type: "task", title: stripFiller(t) };
     }
 
     return null;
@@ -41,9 +66,9 @@ export default function VoiceHUD() {
     const [listening, setListening] = useState(false);
     const [transcript, setTranscript] = useState("");
     const [status, setStatus] = useState<"idle" | "listening" | "processing" | "success" | "error">("idle");
+    const [feedbackMsg, setFeedbackMsg] = useState("");
     const [supported, setSupported] = useState(true);
 
-    // Use a ref so the onend closure always reads the latest transcript value
     const transcriptRef = useRef("");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
@@ -57,6 +82,10 @@ export default function VoiceHUD() {
 
     const stopListening = useCallback(() => {
         recognitionRef.current?.stop();
+    }, []);
+
+    const clearAfter = useCallback((ms: number) => {
+        setTimeout(() => { setStatus("idle"); setTranscript(""); setFeedbackMsg(""); transcriptRef.current = ""; }, ms);
     }, []);
 
     const startListening = useCallback(() => {
@@ -74,6 +103,7 @@ export default function VoiceHUD() {
             setListening(true);
             setStatus("listening");
             setTranscript("");
+            setFeedbackMsg("");
             transcriptRef.current = "";
         };
 
@@ -83,7 +113,6 @@ export default function VoiceHUD() {
                 .map((r: any) => r[0].transcript)
                 .join(" ");
             setTranscript(current);
-            // Keep ref in sync — this is what onend will read
             transcriptRef.current = current;
         };
 
@@ -91,7 +120,6 @@ export default function VoiceHUD() {
             setListening(false);
             setStatus("processing");
 
-            // Read from ref, not state — avoids stale closure
             const finalTranscript = transcriptRef.current;
 
             setTimeout(() => {
@@ -100,17 +128,37 @@ export default function VoiceHUD() {
                     return;
                 }
 
-                const command = parseVoiceCommand(finalTranscript);
-                if (command) {
-                    // Place card at a natural canvas position
+                const result = parseVoiceCommand(finalTranscript);
+                if (!result) {
+                    setStatus("error");
+                    setFeedbackMsg(`Not recognized: "${finalTranscript}"`);
+                    clearAfter(2500);
+                    return;
+                }
+
+                if (result.kind === "card") {
                     const x = 180 + Math.random() * 600;
                     const y = 120 + Math.random() * 350;
-                    addTask(command.type, { x, y }, command.title);
+                    addTask(result.type, { x, y }, result.title);
                     setStatus("success");
-                    setTimeout(() => { setStatus("idle"); setTranscript(""); transcriptRef.current = ""; }, 2500);
-                } else {
-                    setStatus("error");
-                    setTimeout(() => { setStatus("idle"); setTranscript(""); transcriptRef.current = ""; }, 2500);
+                    setFeedbackMsg(`✓ Created ${result.type}: "${result.title}"`);
+                    clearAfter(2500);
+                } else if (result.kind === "canvas") {
+                    if (result.action === "create") {
+                        useCanvasStore.getState().addCanvas(result.name);
+                        setStatus("success");
+                        setFeedbackMsg(`✓ Created workspace: "${result.name}"`);
+                    } else if (result.action === "share") {
+                        // Copy share link (placeholder — fire share action)
+                        navigator.clipboard?.writeText(window.location.href);
+                        setStatus("success");
+                        setFeedbackMsg("✓ Canvas link copied to clipboard");
+                    } else if (result.action === "open") {
+                        useCanvasStore.getState().toggleSidebar();
+                        setStatus("success");
+                        setFeedbackMsg("✓ Workspace sidebar opened");
+                    }
+                    clearAfter(2500);
                 }
             }, 300);
         };
@@ -118,11 +166,12 @@ export default function VoiceHUD() {
         recognition.onerror = () => {
             setListening(false);
             setStatus("error");
-            setTimeout(() => { setStatus("idle"); setTranscript(""); transcriptRef.current = ""; }, 2500);
+            setFeedbackMsg("Microphone error — try again");
+            clearAfter(2500);
         };
 
         recognition.start();
-    }, [addTask]);
+    }, [addTask, clearAfter]);
 
     if (!supported) return null;
 
@@ -145,7 +194,7 @@ export default function VoiceHUD() {
                     boxShadow: listening ? "0 0 20px rgba(239,68,68,0.5)" : "none",
                     color: listening ? "white" : "var(--text-primary)",
                 }}
-                title="Voice Command — say 'Add task: ...' or 'Add note: ...' or 'Add checklist: ...'"
+                title="Voice Command — say 'Add task: ...', 'Create new canvas: ...', 'Share canvas', or 'Open workspace'"
             >
                 {listening ? <MicOff size={16} /> : <Mic size={16} />}
                 <span>{listening ? "Listening..." : "Voice"}</span>
@@ -196,7 +245,7 @@ export default function VoiceHUD() {
                             {status === "success" && <span className="text-[var(--accent-success)] text-lg flex-shrink-0">✓</span>}
                             {status === "error" && <span className="text-[var(--accent-danger)] text-lg flex-shrink-0">✕</span>}
 
-                            {/* Transcript */}
+                            {/* Transcript / Feedback */}
                             <span className="flex-1 text-[13px] font-mono truncate"
                                 style={{
                                     color: status === "success" ? "var(--accent-success)"
@@ -204,15 +253,17 @@ export default function VoiceHUD() {
                                             : "var(--text-primary)",
                                 }}>
                                 {status === "listening" && !transcript
-                                    ? <span style={{ color: "var(--text-muted)" }}>Say: &quot;Add task: your task name&quot;<span className="animate-typing-cursor">_</span></span>
+                                    ? <span style={{ color: "var(--text-muted)" }}>
+                                        Say: &quot;Add task: ...&quot; or &quot;Create new canvas: ...&quot;
+                                        <span className="animate-typing-cursor">_</span>
+                                      </span>
                                     : status === "processing" ? "Processing command..."
-                                        : status === "success" ? `✓ Created: "${transcript}"`
-                                            : status === "error" && transcript ? `Not recognized. Try: "Add task: [name]"`
-                                                : transcript}
+                                        : feedbackMsg ? feedbackMsg
+                                            : transcript}
                             </span>
 
                             <button
-                                onClick={() => { stopListening(); setStatus("idle"); setTranscript(""); transcriptRef.current = ""; }}
+                                onClick={() => { stopListening(); setStatus("idle"); setTranscript(""); setFeedbackMsg(""); transcriptRef.current = ""; }}
                                 className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
                             >
                                 <X size={14} />
