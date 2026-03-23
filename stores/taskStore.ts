@@ -6,13 +6,12 @@ import { generateId } from "@/lib/utils";
 
 import { createCard, updateCard, deleteCard } from "@/lib/firestoreService";
 import { useAuthStore } from "@/stores/authStore";
+import { useCanvasStore } from "@/stores/canvasStore";
 
 interface TaskState {
     tasks: Task[];
     selectedId: string | null;
-    activeCanvasId: string;
     setTasks: (tasks: Task[]) => void;
-    setActiveCanvasId: (id: string) => void;
     addTask: (type: CardType, position: { x: number; y: number }, title?: string) => string;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
@@ -28,14 +27,12 @@ export const useTaskStore = create<TaskState>()(
     immer((set, get) => ({
         tasks: [],
         selectedId: null,
-        activeCanvasId: "default-canvas",
 
         setTasks: (tasks) => set({ tasks }),
-        setActiveCanvasId: (id) => set({ activeCanvasId: id }),
 
         addTask: (type, position, title) => {
             const id = generateId();
-            const { activeCanvasId } = get();
+            const activeCanvasId = useCanvasStore.getState().activeCanvasId;
             const user = useAuthStore.getState().user;
             if (!user) return id;
 
@@ -68,7 +65,7 @@ export const useTaskStore = create<TaskState>()(
         },
 
         updateTask: (id, updates) => {
-            const { activeCanvasId } = get();
+            const activeCanvasId = useCanvasStore.getState().activeCanvasId;
             const user = useAuthStore.getState().user;
 
             set((state) => {
@@ -82,7 +79,7 @@ export const useTaskStore = create<TaskState>()(
         },
 
         deleteTask: (id) => {
-            const { activeCanvasId } = get();
+            const activeCanvasId = useCanvasStore.getState().activeCanvasId;
             const user = useAuthStore.getState().user;
 
             set((state) => {

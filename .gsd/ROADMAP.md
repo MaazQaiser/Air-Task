@@ -18,12 +18,16 @@
 - Migrate existing localStorage data to Firestore on first sign-in
 
 ## Phase 3: Multi-Canvas Organization
-**Status**: PENDING
+**Status**: COMPLETE
 
 **Tasks**:
-- Create canvasService and update canvasStore
-- Implement CanvasSidebar for navigation
-- Bind push/grabbing gestures for hovering and entering folders
+- ✅ Create Canvas type definition (`types/canvas.ts`)
+- ✅ Create canvasService with Firestore CRUD (`lib/canvasService.ts`)
+- ✅ Upgrade canvasStore with multi-canvas management (`stores/canvasStore.ts`)
+- ✅ Update taskStore to read activeCanvasId from canvasStore
+- ✅ Update FirestoreSync to subscribe to both canvases and cards
+- ✅ Implement CanvasSidebar for navigation (`components/canvas/CanvasSidebar.tsx`)
+- ✅ Wire toolbar folder button to open sidebar with active canvas name
 
 ## Phase 4: Canvas Image Integration
 **Status**: PENDING

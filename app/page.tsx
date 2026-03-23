@@ -4,6 +4,7 @@ import { ReactFlowProvider } from "reactflow";
 import Toolbar from "@/components/ui/Toolbar";
 import TaskDock from "@/components/dock/TaskDock";
 import FirestoreSync from "@/components/canvas/FirestoreSync";
+import CanvasSidebar from "@/components/canvas/CanvasSidebar";
 
 const TaskCanvas = dynamic(() => import("@/components/canvas/TaskCanvas"), { ssr: false });
 
@@ -25,6 +26,7 @@ export default function HomePage() {
         />
 
         <FirestoreSync />
+        <CanvasSidebar />
 
         {/* Top toolbar — has access to useReactFlow() via the provider above */}
         <Toolbar />

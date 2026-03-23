@@ -15,11 +15,10 @@ const VoiceHUD = dynamic(() => import("@/components/voice/VoiceHUD"), { ssr: fal
 const GestureOverlay = dynamic(() => import("@/components/gesture/GestureOverlay"), { ssr: false });
 
 export default function Toolbar() {
-    const { theme, toggleTheme } = useCanvasStore();
+    const { theme, toggleTheme, canvases, activeCanvasId } = useCanvasStore();
     const { addTask, tasks } = useTaskStore();
     const { user, signOut } = useAuthStore();
     const [profileOpen, setProfileOpen] = useState(false);
-    const [folderOpen, setFolderOpen] = useState(false);
 
     // Apply theme to html element
     useEffect(() => {
@@ -71,35 +70,19 @@ export default function Toolbar() {
                     </span>
                 </div>
 
-                {/* Folder Dropdown */}
+                {/* Canvas Switcher — opens sidebar */}
                 <div className="relative">
                     <button
-                        onClick={() => setFolderOpen(!folderOpen)}
+                        onClick={() => useCanvasStore.getState().toggleSidebar()}
                         className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-[14px] font-medium"
                         style={{ color: "var(--text-primary)" }}
                     >
                         <FolderOpen size={16} className="text-blue-400" />
-                        <span>My Workspace</span>
-                        <ChevronDown size={14} className={`opacity-50 transition-transform ${folderOpen ? "rotate-180" : ""}`} />
+                        <span>
+                            {canvases.find(c => c.id === activeCanvasId)?.name ?? "My Workspace"}
+                        </span>
+                        <ChevronDown size={14} className="opacity-50" />
                     </button>
-
-                    {folderOpen && (
-                        <div
-                            className="absolute left-0 top-full mt-2 w-52 rounded-2xl shadow-2xl overflow-hidden py-1.5"
-                            style={{
-                                background: "var(--toolbar-bg)",
-                                backdropFilter: "var(--glass-blur)",
-                                border: "1px solid var(--glass-border)",
-                            }}
-                        >
-                            <button className="w-full text-left px-4 py-2.5 text-[14px] hover:bg-white/5 transition-colors text-[var(--text-primary)]">
-                                Project Alpha
-                            </button>
-                            <button className="w-full text-left px-4 py-2.5 text-[14px] hover:bg-white/5 transition-colors text-[var(--text-primary)]">
-                                Design Assets
-                            </button>
-                        </div>
-                    )}
                 </div>
             </motion.div>
 
