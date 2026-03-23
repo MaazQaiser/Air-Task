@@ -6,14 +6,50 @@ import {
     GoogleAuthProvider,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
+    AuthError,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
+
+/* ── Human-readable Firebase error messages ── */
+function getAuthErrorMessage(err: unknown): string {
+    const code = (err as AuthError)?.code ?? "";
+    switch (code) {
+        case "auth/invalid-email":
+            return "That email address doesn\u2019t look right. Please check and try again.";
+        case "auth/user-not-found":
+            return "No account found with this email. Sign up to create one.";
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+            return "Incorrect password. Please try again or reset your password.";
+        case "auth/email-already-in-use":
+            return "An account with this email already exists. Try signing in instead.";
+        case "auth/weak-password":
+            return "Password is too weak. Use at least 6 characters.";
+        case "auth/too-many-requests":
+            return "Too many failed attempts. Please wait a moment and try again.";
+        case "auth/network-request-failed":
+            return "Network error. Check your internet connection and try again.";
+        case "auth/popup-closed-by-user":
+            return "Sign-in popup was closed. Please try again.";
+        case "auth/popup-blocked":
+            return "Pop-up blocked by your browser. Allow pop-ups for this site.";
+        case "auth/configuration-not-found":
+            return "Email/Password sign-in is not enabled. Please use Google sign-in, or enable Email/Password in Firebase Console.";
+        default: {
+            const msg = err instanceof Error ? err.message : "Authentication failed";
+            // Strip Firebase prefix for any unhandled codes
+            return msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)/, "").trim() || "Something went wrong. Please try again.";
+        }
+    }
+}
 
 export default function LoginPage() {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -24,8 +60,7 @@ export default function LoginPage() {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Sign in failed";
-            setError(msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)/, "").trim());
+            setError(getAuthErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -42,8 +77,7 @@ export default function LoginPage() {
                 await createUserWithEmailAndPassword(auth, email, password);
             }
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Authentication failed";
-            setError(msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)/, "").trim());
+            setError(getAuthErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -254,16 +288,51 @@ export default function LoginPage() {
                             <label className="form-label" htmlFor="password">
                                 Password
                             </label>
-                            <input
-                                id="password"
-                                type="password"
-                                className="input"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                                autoComplete={isLogin ? "current-password" : "new-password"}
-                            />
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    className="input"
+                                    style={{ paddingRight: 42 }}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    autoComplete={isLogin ? "current-password" : "new-password"}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    style={{
+                                        position: "absolute",
+                                        right: 4,
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        width: 32,
+                                        height: 32,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: "rgba(226,232,240,0.35)",
+                                        borderRadius: 8,
+                                        transition: "color 0.15s ease, background 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = "rgba(226,232,240,0.7)";
+                                        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = "rgba(226,232,240,0.35)";
+                                        e.currentTarget.style.background = "none";
+                                    }}
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Error message */}
