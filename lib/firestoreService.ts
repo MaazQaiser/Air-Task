@@ -65,8 +65,18 @@ export const subscribeToEdges = (userId: string, canvasId: string, callback: (ed
 
 export const migrateLocalStorageToFirestore = async (userId: string, localCards: Task[]) => {
   const migrationsRef = doc(db, `users/${userId}`);
-  const snap = await getDoc(migrationsRef);
-  if (snap.exists() && snap.data().migrated) return; // already migrated
+  
+  try {
+    const snap = await getDoc(migrationsRef);
+    if (snap.exists() && snap.data().migrated) return; // already migrated
+  } catch (error: any) {
+    if (error.code === "unavailable" || String(error).includes("offline")) {
+      console.warn("Client is offline. Skipping localStorage migration until online.");
+      return; 
+    }
+    console.error("Error checking migration status:", error);
+    return;
+  }
 
   // Create a default 'Migrated Canvas'
   const canvasId = "default-canvas";
