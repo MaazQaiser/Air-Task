@@ -174,7 +174,7 @@ const EMPTY: HandState = {
 const SWIPE_THRESHOLD = 0.18;
 const GESTURE_COOLDOWN_MS = 150; // prevent rapid gesture toggling
 
-const SHARE_HOLD_MS = 1500;    // hold point gesture this long to share
+const SHARE_HOLD_MS = 800;    // hold point gesture this long to share (snappier)
 const SWITCH_THRESHOLD = 0.12; // peace-swipe distance to trigger canvas switch
 
 export function useGestureEngine(
@@ -189,13 +189,14 @@ export function useGestureEngine(
     const [handState, setHandState] = useState<HandState>(EMPTY);
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const rafRef = useRef<number>(0);
 
-    // 1€ Filters for cursor x/y (replaces fixed smoothing)
-    const filterX = useRef(new OneEuroFilter(1.5, 0.007, 1.0));
-    const filterY = useRef(new OneEuroFilter(1.5, 0.007, 1.0));
+    // 1€ Filters for cursor x/y — fine-tuned for high precision & low lag
+    const filterX = useRef(new OneEuroFilter(0.3, 0.015, 1.0));
+    const filterY = useRef(new OneEuroFilter(0.3, 0.015, 1.0));
     const smoothX = useRef(0.5);
     const smoothY = useRef(0.5);
 
@@ -249,6 +250,7 @@ export function useGestureEngine(
         stream?.getTracks().forEach((t) => t.stop());
         if (videoRef.current) videoRef.current.srcObject = null;
         setIsReady(false);
+        setStream(null);
         setHandState(EMPTY);
         isDragging.current = false;
         filterX.current.reset();
@@ -276,6 +278,9 @@ export function useGestureEngine(
                     },
                     runningMode: "VIDEO",
                     numHands: 2,
+                    minHandDetectionConfidence: 0.6,
+                    minHandPresenceConfidence: 0.6,
+                    minTrackingConfidence: 0.6,
                 });
 
                 // Higher resolution for better landmark precision
@@ -294,6 +299,7 @@ export function useGestureEngine(
                 video.muted = true;
                 await video.play();
                 videoRef.current = video;
+                setStream(stream);
                 setIsReady(true);
                 setError(null);
 
@@ -594,5 +600,5 @@ export function useGestureEngine(
         return () => { active = false; stop(); };
     }, [enabled, stop, onZoom, onAutoSelect, onPanelGesture, onCopyGesture, onPasteGesture, onSwitchCanvas]);
 
-    return { handState, isReady, error };
+    return { handState, isReady, error, stream };
 }

@@ -12,6 +12,8 @@ interface TaskState {
     tasks: Task[];
     edges: CanvasEdge[];
     selectedId: string | null;
+    selectedIds: string[];
+    isSelectionMode: boolean;
     setTasks: (tasks: Task[]) => void;
     setEdges: (edges: CanvasEdge[]) => void;
     addTask: (type: CardType, position: { x: number; y: number }, title?: string) => string;
@@ -23,7 +25,9 @@ interface TaskState {
     addChecklistItem: (taskId: string, label: string) => void;
     setSelected: (id: string | null) => void;
     updatePosition: (id: string, position: { x: number; y: number }) => void;
-    
+    toggleSelectCard: (id: string) => void;
+    clearSelection: () => void;
+    setSelectionMode: (v: boolean) => void;
     // Edge actions
     addConnection: (edge: CanvasEdge) => void;
     removeConnection: (edgeId: string) => void;
@@ -34,6 +38,8 @@ export const useTaskStore = create<TaskState>()(
         tasks: [],
         edges: [],
         selectedId: null,
+        selectedIds: [],
+        isSelectionMode: false,
 
         setTasks: (tasks) => set({ tasks }),
         setEdges: (edges) => set({ edges }),
@@ -130,6 +136,30 @@ export const useTaskStore = create<TaskState>()(
 
         setSelected: (id) => {
             set((state) => { state.selectedId = id; });
+        },
+
+        toggleSelectCard: (id) => {
+            set((state) => {
+                const idx = state.selectedIds.indexOf(id);
+                if (idx === -1) {
+                    state.selectedIds.push(id);
+                } else {
+                    state.selectedIds.splice(idx, 1);
+                }
+            });
+        },
+
+        clearSelection: () => {
+            set((state) => {
+                state.selectedIds = [];
+            });
+        },
+
+        setSelectionMode: (v) => {
+            set((state) => {
+                state.isSelectionMode = v;
+                if (!v) state.selectedIds = [];
+            });
         },
 
 

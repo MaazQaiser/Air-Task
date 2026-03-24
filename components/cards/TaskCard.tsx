@@ -2,10 +2,13 @@
 import { memo, useState } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pin, Trash2, EyeOff, CheckCircle2, Circle, Calendar, Zap, Clock, AlertTriangle } from "lucide-react";
+import { Pin, Trash2, EyeOff, CheckCircle2, Circle, Calendar, Zap, Clock, AlertTriangle, Check, MessageCircle } from "lucide-react";
 import { Task } from "@/types/task";
 import { useTaskStore } from "@/stores/taskStore";
 import { cn, formatDueDate, isOverdue } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const CardCommentsPanel = dynamic(() => import("./CardCommentsPanel"), { ssr: false });
 
 const PRIORITY_CONFIG = {
     low:      { label: "Low",      color: "#10b981", icon: <Circle size={9} />, glow: "rgba(16,185,129,0.3)" },
@@ -21,12 +24,15 @@ const STATUS_CONFIG = {
 };
 
 function TaskCard({ data, selected }: NodeProps<Task>) {
-    const { updateTask, deleteTask, togglePin, toggleDock } = useTaskStore();
+    const { updateTask, deleteTask, togglePin, toggleDock, isSelectionMode, selectedIds, toggleSelectCard } = useTaskStore();
     const [editing, setEditing] = useState(false);
     const [title, setTitle] = useState(data.title);
+    const [commentsOpen, setCommentsOpen] = useState(false);
     const overdue = isOverdue(data.dueDate) && data.status !== "done";
     const priority = PRIORITY_CONFIG[data.priority];
     const status = STATUS_CONFIG[data.status];
+
+    const isSelectedForAction = selectedIds.includes(data.id);
 
     const handleTitleBlur = () => {
         setEditing(false);
@@ -52,12 +58,43 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
             )}
             style={{
                 width: 320,
-                borderColor: selected ? priority.color : undefined,
-                boxShadow: selected
-                    ? `var(--card-shadow-elevated), 0 0 28px ${priority.glow}`
-                    : undefined,
+                borderColor: isSelectionMode 
+                    ? (isSelectedForAction ? "#6366f1" : "transparent") 
+                    : (selected ? priority.color : undefined),
+                boxShadow: isSelectionMode && isSelectedForAction 
+                    ? "0 0 0 3px rgba(99,102,241,0.4)"
+                    : (selected && !isSelectionMode ? `var(--card-shadow-elevated), 0 0 28px ${priority.glow}` : undefined),
+                borderWidth: isSelectionMode ? (isSelectedForAction ? 3 : 1) : 1,
+            }}
+            onClickCapture={(e) => {
+                if (isSelectionMode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleSelectCard(data.id);
+                }
             }}
         >
+            {/* Selection Checkbox (Active in Selection Mode) */}
+            <AnimatePresence>
+                {isSelectionMode && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute -top-3 -right-3 z-50 flex items-center justify-center rounded-full transition-colors"
+                        style={{
+                            width: 24,
+                            height: 24,
+                            background: isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.1)",
+                            border: `2px solid ${isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.3)"}`,
+                            boxShadow: isSelectedForAction ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        }}
+                    >
+                        {isSelectedForAction && <Check size={14} color="#fff" strokeWidth={3} />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Connection Handles */}
             <Handle 
                 type="target" 
@@ -154,6 +191,17 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                             <Pin size={11} fill={data.pinned ? "currentColor" : "none"} />
                         </button>
                         <button
+                            onClick={() => setCommentsOpen(true)}
+                            className="relative w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+                            style={{ color: "var(--text-muted)" }}
+                            title="Comments"
+                        >
+                            <MessageCircle size={11} />
+                            {(data.commentCount || 0) > 0 && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                            )}
+                        </button>
+                        <button
                             onClick={() => toggleDock(data.id)}
                             className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
                             style={{ color: "var(--text-muted)" }}
@@ -218,6 +266,16 @@ function TaskCard({ data, selected }: NodeProps<Task>) {
                         exit={{ scale: 0 }}
                         className="absolute top-2.5 left-3 w-1 h-1 rounded-full"
                         style={{ background: priority.color, boxShadow: `0 0 6px ${priority.color}` }}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {commentsOpen && (
+                    <CardCommentsPanel
+                        cardId={data.id}
+                        cardTitle={data.title}
+                        onClose={() => setCommentsOpen(false)}
                     />
                 )}
             </AnimatePresence>

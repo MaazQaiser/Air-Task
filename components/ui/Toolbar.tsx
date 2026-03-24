@@ -3,18 +3,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Sun, Moon, LayoutGrid,
     FolderOpen, ChevronDown, Share2, User,
-    Settings, LogOut, Plus, X
+    Settings, LogOut, Plus, X, Sparkles, MousePointer2,
+    Calendar as CalendarIcon
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { sendInviteCard } from "@/lib/firestoreService";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useClipboardStore } from "@/stores/clipboardStore";
 import { useEffect, useState, useRef } from "react";
-import dynamic from "next/dynamic";
 
 const VoiceHUD = dynamic(() => import("@/components/voice/VoiceHUD"), { ssr: false });
 const GestureOverlay = dynamic(() => import("@/components/gesture/GestureOverlay"), { ssr: false });
+const TemplatesModal = dynamic(() => import("@/components/ui/TemplatesModal"), { ssr: false });
+const SummaryModal = dynamic(() => import("@/components/ai/SummaryModal"), { ssr: false });
+import { Logo } from "@/components/common/Logo";
 
 /* ─────────────────────────────────────────────────────────────
    Design tokens — theme-aware panels
@@ -39,12 +43,14 @@ const getPanelBase = (theme: "light" | "dark"): React.CSSProperties =>
 
 export default function Toolbar() {
     const { theme, toggleTheme, canvases, activeCanvasId } = useCanvasStore();
-    const { addTask, tasks } = useTaskStore();
+    const { addTask, tasks, isSelectionMode, setSelectionMode, selectedIds, clearSelection } = useTaskStore();
     const { user, signOut } = useAuthStore();
     const { copiedCard } = useClipboardStore();
     const [profileOpen, setProfileOpen] = useState(false);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
+    const [templatesOpen, setTemplatesOpen] = useState(false);
+    const [summaryOpen, setSummaryOpen] = useState(false);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteStatus, setInviteStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [inviteError, setInviteError] = useState("");
@@ -129,7 +135,7 @@ export default function Toolbar() {
                 {/* Logo */}
                 <div className="flex items-center" style={{ gap: 6, marginLeft: 2 }}>
                     <div style={{ display: "flex", alignItems: "center" }}>
-                        <img src="/assets/logo.png" alt="Logo" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                        <Logo size={24} />
                     </div>
                     <span
                         style={{
@@ -176,7 +182,7 @@ export default function Toolbar() {
                     </span>
                     <ChevronDown size={12} strokeWidth={3} />
                 </motion.button>
-                {copiedCard && (
+                {copiedCard && !isSelectionMode && (
                     <>
                         <Divider />
                         <div className="flex items-center" style={{ gap: 12 }}>
@@ -186,6 +192,65 @@ export default function Toolbar() {
                         </div>
                     </>
                 )}
+
+                <Divider />
+
+                <motion.button
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                        if (isSelectionMode) clearSelection();
+                        setSelectionMode(!isSelectionMode);
+                    }}
+                    className="flex items-center justify-center"
+                    style={{
+                        gap: 6,
+                        height: 36,
+                        padding: "0 14px",
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 800,
+                        background: isSelectionMode ? "rgba(99,102,241,0.15)" : (isDark ? "rgba(255,255,255,0.05)" : "#ffffff"),
+                        color: isSelectionMode ? "#6366f1" : (isDark ? "#94a3b8" : "#4b5563"),
+                        border: `2px solid ${isSelectionMode ? "#6366f1" : (isDark ? "rgba(255,255,255,0.1)" : "#e2e8f0")}`,
+                        boxShadow: `2px 2px 0 ${isDark ? "black" : "#111827"}`,
+                        cursor: "pointer",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
+                >
+                    <MousePointer2 size={14} strokeWidth={isSelectionMode ? 3 : 2.5} />
+                    {isSelectionMode ? "Cancel Select" : "Select"}
+                </motion.button>
+
+                <AnimatePresence>
+                    {isSelectionMode && selectedIds.length >= 2 && (
+                        <motion.button
+                            initial={{ width: 0, opacity: 0, marginLeft: -8 }}
+                            animate={{ width: "auto", opacity: 1, marginLeft: 8 }}
+                            exit={{ width: 0, opacity: 0, marginLeft: -8, padding: 0, overflow: "hidden" }}
+                            whileHover={{ scale: 1.04, y: -2 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => setSummaryOpen(true)}
+                            className="flex items-center justify-center whitespace-nowrap"
+                            style={{
+                                gap: 6,
+                                height: 36,
+                                padding: "0 14px",
+                                borderRadius: 12,
+                                fontSize: 12,
+                                fontWeight: 800,
+                                background: "#6366f1",
+                                color: "#ffffff",
+                                border: "none",
+                                boxShadow: "0 4px 14px rgba(99,102,241,0.4)",
+                                cursor: "pointer",
+                            }}
+                        >
+                            <Sparkles size={14} strokeWidth={2.5} />
+                            Summarize {selectedIds.length}
+                        </motion.button>
+                    )}
+                </AnimatePresence>
             </motion.div>
 
             {/* ─── BOTTOM PANEL (main action dock) ── */}
@@ -215,6 +280,15 @@ export default function Toolbar() {
                         const id = useTaskStore.getState().addTask("note", { x: 500, y: 300 });
                         useTaskStore.getState().updateTask(id, { title: "Central Idea", description: "Branch out from here." });
                     }} />
+
+                    <Divider />
+
+                    <AddCardBtn
+                        label="Templates"
+                        color="#6366f1"
+                        icon={<LayoutGrid size={14} strokeWidth={2.5} />}
+                        onClick={() => setTemplatesOpen(true)}
+                    />
                 </div>
 
                 <Divider />
@@ -250,6 +324,36 @@ export default function Toolbar() {
                     ...panelBase,
                 }}
             >
+                {/* Calendar View Toggle */}
+                <motion.button
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={useCanvasStore.getState().toggleCalendar}
+                    className="flex items-center justify-center"
+                    style={{
+                        height: 36,
+                        padding: "0 10px",
+                        gap: 8,
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 800,
+                        background: isDark ? "rgba(255,255,255,0.05)" : "#ffffff",
+                        color: isDark ? "#c084fc" : "#a855f7",
+                        border: `2px solid ${isDark ? "#c084fc" : "#a855f7"}`,
+                        boxShadow: `2px 2px 0 ${isDark ? "black" : "#a855f7"}`,
+                        cursor: "pointer",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = `4px 4px 0 ${isDark ? "black" : "#a855f7"}`}
+                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = `2px 2px 0 ${isDark ? "black" : "#a855f7"}`}
+                    title="Calendar View"
+                >
+                    <CalendarIcon size={15} strokeWidth={3} />
+                    <span className="hidden sm:inline">Calendar</span>
+                </motion.button>
+
+                <Divider />
+
                 {/* Theme toggle */}
                 <motion.button
                     whileHover={{ scale: 1.04, y: -2 }}
@@ -510,6 +614,9 @@ export default function Toolbar() {
             <AnimatePresence>
                 {profileSettingsOpen && <ProfileSettingsModal open={profileSettingsOpen} onClose={() => setProfileSettingsOpen(false)} />}
             </AnimatePresence>
+
+            <TemplatesModal open={templatesOpen} onClose={() => setTemplatesOpen(false)} />
+            <SummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} />
         </>
     );
 }

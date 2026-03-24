@@ -10,6 +10,7 @@ interface CanvasState {
     canvases: Canvas[];
     activeCanvasId: string;
     sidebarOpen: boolean;
+    calendarOpen: boolean;
 
     /* --- theme (kept from original) --- */
     zoom: number;
@@ -21,6 +22,7 @@ interface CanvasState {
     setCanvases: (c: Canvas[]) => void;
     setActiveCanvas: (id: string) => void;
     toggleSidebar: () => void;
+    toggleCalendar: () => void;
     addCanvas: (name: string, icon?: string, color?: string) => string;
     renameCanvas: (id: string, name: string) => void;
     removeCanvas: (id: string) => void;
@@ -33,6 +35,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     canvases: [],
     activeCanvasId: "default-canvas",
     sidebarOpen: false,
+    calendarOpen: false,
 
     zoom: 1,
     theme: "light",
@@ -50,6 +53,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     setActiveCanvas: (id) => set({ activeCanvasId: id }),
     toggleSidebar: () => set({ sidebarOpen: !get().sidebarOpen }),
+    toggleCalendar: () => set({ calendarOpen: !get().calendarOpen }),
 
     addCanvas: (name, icon, color) => {
         const user = useAuthStore.getState().user;

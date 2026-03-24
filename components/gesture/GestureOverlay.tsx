@@ -271,7 +271,7 @@ export default function GestureOverlay() {
         setTimeout(() => setToastMessage(null), 3000);
     }, [canvases, activeCanvasId, setActiveCanvas]);
 
-    const { handState, isReady, error } = useGestureEngine(
+    const { handState, isReady, error, stream } = useGestureEngine(
         enabled, handleZoom, handleAutoSelect, handlePanelGesture, handleCopyGesture, handlePasteGesture, handleSwitchCanvas
     );
 
@@ -383,6 +383,51 @@ export default function GestureOverlay() {
                                     <div>🤲 <b>Both hands</b> → zoom</div>
                                 </div>
                             </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Gesture Camera Window */}
+            <AnimatePresence>
+                {enabled && isReady && stream && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        className="fixed bottom-24 right-6 z-[60] overflow-hidden rounded-2xl"
+                        style={{
+                            width: 240,
+                            height: 160,
+                            background: "#000",
+                            border: "3px solid #111827",
+                            boxShadow: "6px 6px 0 #111827",
+                        }}
+                    >
+                        <video
+                            autoPlay
+                            playsInline
+                            muted
+                            ref={(el) => {
+                                if (el) el.srcObject = stream;
+                            }}
+                            className="w-full h-full object-cover mirror-x"
+                            style={{ transform: "scaleX(-1)" }}
+                        />
+                        
+                        {/* Status Overlay */}
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[9px] font-mono text-white flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            LIVE GESTURE
+                        </div>
+
+                        {/* Hand landmarks visualization hint (simplified) */}
+                        {confidence > 0 && (
+                            <motion.div 
+                                className="absolute inset-0 pointer-events-none border-2 border-cyan-400/30"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                            />
                         )}
                     </motion.div>
                 )}

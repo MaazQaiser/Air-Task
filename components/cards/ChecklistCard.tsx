@@ -2,18 +2,24 @@
 import { memo, useState } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pin, Trash2, EyeOff, Plus, CheckSquare } from "lucide-react";
+import { Pin, Trash2, EyeOff, Plus, CheckSquare, Check, MessageCircle } from "lucide-react";
 import { Task } from "@/types/task";
 import { useTaskStore } from "@/stores/taskStore";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const CardCommentsPanel = dynamic(() => import("./CardCommentsPanel"), { ssr: false });
 
 const ACCENT = "#a855f7";
 const ACCENT_GLOW = "rgba(168,85,247,0.25)";
 
 function ChecklistCard({ data, selected }: NodeProps<Task>) {
-    const { toggleChecklist, addChecklistItem, togglePin, toggleDock, deleteTask } = useTaskStore();
+    const { toggleChecklist, addChecklistItem, togglePin, toggleDock, deleteTask, isSelectionMode, selectedIds, toggleSelectCard } = useTaskStore();
     const [newItem, setNewItem] = useState("");
     const [addingItem, setAddingItem] = useState(false);
+    const [commentsOpen, setCommentsOpen] = useState(false);
+
+    const isSelectedForAction = selectedIds.includes(data.id);
 
     const items = data.checklistItems ?? [];
     const done = items.filter((i) => i.done).length;
@@ -29,10 +35,43 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
             className={cn("glass overflow-hidden group cursor-default", selected && "glass-elevated")}
             style={{
                 width: 300,
-                borderColor: selected ? ACCENT : undefined,
-                boxShadow: selected ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined,
+                borderColor: isSelectionMode 
+                    ? (isSelectedForAction ? "#6366f1" : "transparent") 
+                    : (selected ? ACCENT : undefined),
+                boxShadow: isSelectionMode && isSelectedForAction 
+                    ? "0 0 0 3px rgba(99,102,241,0.4)"
+                    : (selected && !isSelectionMode ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined),
+                borderWidth: isSelectionMode ? (isSelectedForAction ? 3 : 1) : 1,
+            }}
+            onClickCapture={(e) => {
+                if (isSelectionMode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleSelectCard(data.id);
+                }
             }}
         >
+            {/* Selection Checkbox (Active in Selection Mode) */}
+            <AnimatePresence>
+                {isSelectionMode && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute -top-3 -right-3 z-50 flex items-center justify-center rounded-full transition-colors"
+                        style={{
+                            width: 24,
+                            height: 24,
+                            background: isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.1)",
+                            border: `2px solid ${isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.3)"}`,
+                            boxShadow: isSelectedForAction ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        }}
+                    >
+                        {isSelectedForAction && <Check size={14} color="#fff" strokeWidth={3} />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Connection Handles */}
             <Handle 
                 type="target" 
@@ -107,6 +146,16 @@ function ChecklistCard({ data, selected }: NodeProps<Task>) {
                             style={{ color: data.pinned ? ACCENT : "var(--text-muted)" }}
                         >
                             <Pin size={11} fill={data.pinned ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                            onClick={() => setCommentsOpen(true)}
+                            className="relative w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+                            style={{ color: "var(--text-muted)" }}
+                        >
+                            <MessageCircle size={11} />
+                            {(data.commentCount || 0) > 0 && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                            )}
                         </button>
                         <button
                             onClick={() => toggleDock(data.id)}

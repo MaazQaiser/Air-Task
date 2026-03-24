@@ -9,6 +9,7 @@ import OnboardingGuide from "@/components/onboarding/OnboardingGuide";
 import WelcomeNote from "@/components/onboarding/WelcomeNote";
 
 const TaskCanvas = dynamic(() => import("@/components/canvas/TaskCanvas"), { ssr: false });
+const CalendarOverlay = dynamic(() => import("@/components/ui/CalendarOverlay"), { ssr: false });
 
 export default function HomePage() {
   return (
@@ -44,6 +45,8 @@ export default function HomePage() {
 
         {/* Onboarding guide — shows only for first-time users */}
         <OnboardingGuide />
+
+        <CalendarOverlay />
       </main>
     </ReactFlowProvider>
   );

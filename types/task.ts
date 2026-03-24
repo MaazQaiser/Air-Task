@@ -22,6 +22,7 @@ export interface Task {
     checklistItems?: ChecklistItem[];
     position: { x: number; y: number };
     createdAt: string;
+    commentCount?: number;
 }
 
 export interface CanvasEdge {

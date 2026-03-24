@@ -1,8 +1,8 @@
 "use client";
 import { memo, useState } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
-import { motion } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trash2, Check } from "lucide-react";
 import { Task } from "@/types/task";
 import { useTaskStore } from "@/stores/taskStore";
 import { cn } from "@/lib/utils";
@@ -21,8 +21,10 @@ const AVATAR_EMOJIS = [
 ];
 
 function StickerCard({ data, selected }: NodeProps<Task>) {
-    const { updateTask, deleteTask } = useTaskStore();
+    const { updateTask, deleteTask, isSelectionMode, selectedIds, toggleSelectCard } = useTaskStore();
     const [picking, setPicking] = useState(false);
+
+    const isSelectedForAction = selectedIds.includes(data.id);
 
     const isAvatar = data.description === "avatar";
     const emoji = data.title || "⭐";
@@ -38,7 +40,35 @@ function StickerCard({ data, selected }: NodeProps<Task>) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: "spring", damping: 18, stiffness: 350 }}
             className={cn("group relative cursor-default", selected && "z-10")}
+            onClickCapture={(e) => {
+                if (isSelectionMode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleSelectCard(data.id);
+                }
+            }}
         >
+            {/* Selection Checkbox (Active in Selection Mode) */}
+            <AnimatePresence>
+                {isSelectionMode && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute -top-3 -right-3 z-50 flex items-center justify-center rounded-full transition-colors"
+                        style={{
+                            width: 24,
+                            height: 24,
+                            background: isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.1)",
+                            border: `2px solid ${isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.3)"}`,
+                            boxShadow: isSelectedForAction ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        }}
+                    >
+                        {isSelectedForAction && <Check size={14} color="#fff" strokeWidth={3} />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Connection Handles */}
             <Handle 
                 type="target" 
@@ -70,16 +100,16 @@ function StickerCard({ data, selected }: NodeProps<Task>) {
                     background: selected
                         ? "rgba(0,180,255,0.1)"
                         : "rgba(255,255,255,0.03)",
-                    border: selected
-                        ? "2px solid rgba(0,180,255,0.3)"
-                        : "1px solid rgba(255,255,255,0.06)",
-                    boxShadow: selected
-                        ? "0 0 20px rgba(0,180,255,0.15)"
-                        : "0 2px 8px rgba(0,0,0,0.3)",
+                    border: isSelectionMode
+                        ? (isSelectedForAction ? "3px solid #6366f1" : "1px solid rgba(255,255,255,0.06)")
+                        : (selected ? "2px solid rgba(0,180,255,0.3)" : "1px solid rgba(255,255,255,0.06)"),
+                    boxShadow: isSelectionMode && isSelectedForAction 
+                        ? "0 0 0 3px rgba(99,102,241,0.4)"
+                        : (selected && !isSelectionMode ? "0 0 20px rgba(0,180,255,0.15)" : "0 2px 8px rgba(0,0,0,0.3)"),
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                 }}
-                onDoubleClick={() => setPicking(!picking)}
+                onDoubleClick={() => !isSelectionMode && setPicking(!picking)}
             >
                 {emoji}
             </div>

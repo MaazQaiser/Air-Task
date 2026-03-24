@@ -1,21 +1,27 @@
 "use client";
 import { memo, useState } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
-import { motion } from "framer-motion";
-import { Pin, Trash2, EyeOff, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Pin, Trash2, EyeOff, FileText, Check, MessageCircle } from "lucide-react";
 import { Task } from "@/types/task";
 import { useTaskStore } from "@/stores/taskStore";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const CardCommentsPanel = dynamic(() => import("./CardCommentsPanel"), { ssr: false });
 
 const ACCENT = "#10b981";
 const ACCENT_GLOW = "rgba(16,185,129,0.25)";
 
 function NoteCard({ data, selected }: NodeProps<Task>) {
-    const { updateTask, togglePin, toggleDock, deleteTask } = useTaskStore();
+    const { updateTask, togglePin, toggleDock, deleteTask, isSelectionMode, selectedIds, toggleSelectCard } = useTaskStore();
     const [editingTitle, setEditingTitle] = useState(false);
     const [editingDesc, setEditingDesc] = useState(false);
     const [title, setTitle] = useState(data.title);
     const [desc, setDesc] = useState(data.description ?? "");
+    const [commentsOpen, setCommentsOpen] = useState(false);
+
+    const isSelectedForAction = selectedIds.includes(data.id);
 
     const saveTitle = () => {
         setEditingTitle(false);
@@ -35,10 +41,43 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
             className={cn("glass overflow-hidden group cursor-default", selected && "glass-elevated")}
             style={{
                 width: 300,
-                borderColor: selected ? ACCENT : undefined,
-                boxShadow: selected ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined,
+                borderColor: isSelectionMode 
+                    ? (isSelectedForAction ? "#6366f1" : "transparent") 
+                    : (selected ? ACCENT : undefined),
+                boxShadow: isSelectionMode && isSelectedForAction 
+                    ? "0 0 0 3px rgba(99,102,241,0.4)"
+                    : (selected && !isSelectionMode ? `var(--card-shadow-elevated), 0 0 24px ${ACCENT_GLOW}` : undefined),
+                borderWidth: isSelectionMode ? (isSelectedForAction ? 3 : 1) : 1,
+            }}
+            onClickCapture={(e) => {
+                if (isSelectionMode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleSelectCard(data.id);
+                }
             }}
         >
+            {/* Selection Checkbox (Active in Selection Mode) */}
+            <AnimatePresence>
+                {isSelectionMode && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute -top-3 -right-3 z-50 flex items-center justify-center rounded-full transition-colors"
+                        style={{
+                            width: 24,
+                            height: 24,
+                            background: isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.1)",
+                            border: `2px solid ${isSelectedForAction ? "#6366f1" : "rgba(255,255,255,0.3)"}`,
+                            boxShadow: isSelectedForAction ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        }}
+                    >
+                        {isSelectedForAction && <Check size={14} color="#fff" strokeWidth={3} />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Connection Handles */}
             <Handle 
                 type="target" 
@@ -113,6 +152,16 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                             <Pin size={11} fill={data.pinned ? "currentColor" : "none"} />
                         </button>
                         <button
+                            onClick={() => setCommentsOpen(true)}
+                            className="relative w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
+                            style={{ color: "var(--text-muted)" }}
+                        >
+                            <MessageCircle size={11} />
+                            {(data.commentCount || 0) > 0 && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                            )}
+                        </button>
+                        <button
                             onClick={() => toggleDock(data.id)}
                             className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/10 transition-colors"
                             style={{ color: "var(--text-muted)" }}
@@ -173,6 +222,16 @@ function NoteCard({ data, selected }: NodeProps<Task>) {
                     />
                 </div>
             </div>
+
+            <AnimatePresence>
+                {commentsOpen && (
+                    <CardCommentsPanel
+                        cardId={data.id}
+                        cardTitle={data.title}
+                        onClose={() => setCommentsOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
