@@ -203,14 +203,14 @@ export default function TaskCanvas() {
             >
                 <Background
                     variant={BackgroundVariant.Dots}
-                    gap={28}
-                    size={1.2}
-                    color={theme === "dark" ? "rgba(0,212,255,0.1)" : "rgba(99,102,241,0.1)"}
+                    gap={32}
+                    size={1.5}
+                    color={theme === "dark" ? "rgba(255,255,255,0.25)" : "rgba(99,102,241,0.15)"}
                 />
                 <Controls showInteractive={false} />
                 <MiniMap
                     nodeColor={minimapNodeColor as (node: { data: unknown }) => string}
-                    maskColor={theme === "dark" ? "rgba(8,12,20,0.7)" : "rgba(240,242,247,0.7)"}
+                    maskColor={theme === "dark" ? "rgba(0,0,0,0.7)" : "rgba(240,242,247,0.7)"}
                     pannable
                     zoomable
                 />

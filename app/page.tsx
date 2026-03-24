@@ -17,7 +17,7 @@ export default function HomePage() {
       <main className="w-screen h-screen overflow-hidden relative">
         {/* Global background gradients */}
         <div
-          className="absolute inset-0 pointer-events-none z-0"
+          className="absolute inset-0 pointer-events-none z-0 global-glow"
           style={{
             background: `
               radial-gradient(ellipse 60% 50% at 20% 20%, rgba(0,212,255,0.06) 0%, transparent 70%),
