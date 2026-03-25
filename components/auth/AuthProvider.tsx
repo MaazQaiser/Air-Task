@@ -152,12 +152,17 @@ export default function AuthProvider({
     }, [init]);
 
     useEffect(() => {
+        const publicRoutes = ["/", "/login"];
+        const isPublicRoute = publicRoutes.includes(pathname);
+
         if (!loading) {
-            if (!user && pathname !== "/login") {
+            // Redirect unauthenticated users from private routes to login
+            if (!user && !isPublicRoute) {
                 router.push("/login");
             }
+            // Redirect authenticated users from login to workspace
             if (user && pathname === "/login") {
-                router.push("/");
+                router.push("/workspace");
             }
         }
     }, [user, loading, pathname, router]);
